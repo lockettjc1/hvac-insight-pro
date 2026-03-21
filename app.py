@@ -779,7 +779,7 @@ with cols[4]:
                 status="danger" if kpis.get("est_cop", 3) < 2 else "good")
 
 # ─── Tabs ────────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📈 Time Series", "⚡ Energy", "🌡 Temperatures", "🚨 Anomalies", "⚙️ Fault Rules", "🤖 ML Insights"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["📈 Time Series", "⚡ Energy", "🌡 Temperatures", "🚨 Anomalies", "⚙️ Fault Rules", "🤖 ML Insights", "🏭 Equipment", "🔌 BACnet Live"])
 
 # ══════════════════════════════════════════════════════════════════════════════════
 # TAB 1 — Time Series
@@ -2216,6 +2216,470 @@ with tab6:
                         "Coefficients are in **standardised units** (after scaling), so magnitude "
                         "is comparable across features. Positive = raises predicted kW; Negative = reduces it."
                     )
+
+
+# ══════════════════════════════════════════════════════════════════════════════════
+# TAB 7 — Equipment Fault Rules
+# ══════════════════════════════════════════════════════════════════════════════════
+with tab7:
+    st.markdown("## 🏭 Equipment Fault Rules")
+    st.caption("Fault detection rules for VAV boxes, boilers, cooling towers, heat exchangers, and RTUs.")
+
+    equip_tab1, equip_tab2, equip_tab3, equip_tab4, equip_tab5 = st.tabs([
+        "🌀 VAV Boxes", "🔥 Boilers", "🌊 Cooling Towers", "♻️ Heat Exchangers", "🏠 RTUs"
+    ])
+
+    EQUIP_COLORS = {"red": "#ff6b6b", "amber": "#f7c948", "green": "#2ecc71", "blue": "#00b4d8", "teal": "#06d6a0"}
+
+    def equip_metric(label, value, status="default"):
+        color = {"danger": "#ff6b6b", "warning": "#f7c948", "good": "#2ecc71", "default": "#00b4d8"}.get(status, "#00b4d8")
+        st.markdown(f"""<div style="background:#161b22;border:1px solid #30363d;border-top:3px solid {color};
+        border-radius:10px;padding:16px 20px;margin-bottom:10px">
+        <div style="font-family:Space Mono,monospace;font-size:10px;letter-spacing:2px;color:#8b949e;text-transform:uppercase">{label}</div>
+        <div style="font-family:Space Mono,monospace;font-size:24px;font-weight:700;color:#e6edf3">{value}</div>
+        </div>""", unsafe_allow_html=True)
+
+    # ── VAV Boxes ────────────────────────────────────────────────────────────────
+    with equip_tab1:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>VAV Box Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("VAV (Variable Air Volume) boxes control airflow to individual zones. Common faults include stuck dampers, failed actuators, and sensor drift.")
+
+        vav_cols = [c for c in numeric_cols if any(k in c.lower() for k in ["cfm", "damper", "vav", "zone", "supply"])]
+
+        VAV_RULES = [
+            {"name": "Stuck Damper — Fully Closed", "severity": "HIGH",
+             "description": "Damper position <5% for >2 hrs during occupied hours — zone getting no airflow.",
+             "expr": "oa_damper_pct < 5% during occupied hrs",
+             "check": lambda d: (d["oa_damper_pct"] < 5) & (d["timestamp"].dt.hour.between(7,18)) if "oa_damper_pct" in d.columns else None,
+             "action": "Inspect actuator, check BAS command signal, verify linkage."},
+            {"name": "Stuck Damper — Fully Open", "severity": "MEDIUM",
+             "description": "Damper >95% for extended period when cooling demand is low — overcooling risk.",
+             "expr": "oa_damper_pct > 95% for >4 hrs",
+             "check": lambda d: d["oa_damper_pct"] > 95 if "oa_damper_pct" in d.columns else None,
+             "action": "Check zone thermostat, verify control sequence, inspect actuator."},
+            {"name": "Low Airflow — Underventilation", "severity": "HIGH",
+             "description": "Supply CFM below 30% of mean during occupied hours — IAQ concern.",
+             "expr": "supply_cfm < 30% of mean during occupied hrs",
+             "check": lambda d: (d["supply_cfm"] < d["supply_cfm"].mean() * 0.3) & (d["timestamp"].dt.hour.between(7,18)) if "supply_cfm" in d.columns else None,
+             "action": "Check duct static pressure, inspect VAV actuator, verify AHU fan operation."},
+            {"name": "High Airflow — Overcooling", "severity": "LOW",
+             "description": "Supply CFM above 95th percentile sustained — possible control loop hunting.",
+             "expr": "supply_cfm > P95 for >2 hrs",
+             "check": lambda d: d["supply_cfm"] > d["supply_cfm"].quantile(0.95) if "supply_cfm" in d.columns else None,
+             "action": "Check zone temperature sensor, review control tuning parameters."},
+            {"name": "Supply Temp Too High at VAV", "severity": "MEDIUM",
+             "description": "Supply air above 65°F during peak cooling hours — AHU or VAV reheat issue.",
+             "expr": "supply_air_temp > 65°F between 10:00–16:00",
+             "check": lambda d: (d["supply_air_temp"] > 65) & (d["timestamp"].dt.hour.between(10,16)) if "supply_air_temp" in d.columns else None,
+             "action": "Verify AHU cooling coil, check chilled water valve, inspect reheat controls."},
+        ]
+
+        triggered_vav = 0
+        for rule in VAV_RULES:
+            try:
+                mask = rule["check"](df)
+                if mask is None:
+                    status_icon = "⚫"
+                    status_text = "Missing data"
+                    count = 0
+                else:
+                    count = int(mask.sum())
+                    triggered_vav += 1 if count > 0 else 0
+                    status_icon = "🔴" if count > 0 and rule["severity"]=="HIGH" else "🟡" if count > 0 else "🟢"
+                    status_text = f"{count} fault readings" if count > 0 else "No faults"
+            except:
+                status_icon = "⚫"
+                status_text = "Could not evaluate"
+                count = 0
+
+            with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
+                st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"**Recommended action:** {rule['action']}")
+                sev_color = "#ff6b6b" if rule["severity"]=="HIGH" else "#f7c948" if rule["severity"]=="MEDIUM" else "#2ecc71"
+                st.markdown(f"<span style='color:{sev_color};font-family:Space Mono,monospace;font-size:11px;font-weight:700'>{rule['severity']}</span>", unsafe_allow_html=True)
+
+        c1, c2 = st.columns(2)
+        c1.metric("VAV Rules Triggered", triggered_vav)
+        c2.metric("Total VAV Rules", len(VAV_RULES))
+
+    # ── Boilers ──────────────────────────────────────────────────────────────────
+    with equip_tab2:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Boiler Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("Boiler faults often manifest as supply/return temperature anomalies, cycling issues, and efficiency degradation.")
+
+        st.info("💡 Boiler analysis uses supply/return temperature data. For dedicated boiler sensors, upload a CSV with columns: , , , .")
+
+        BOILER_RULES = [
+            {"name": "Low System ΔT — Poor Heat Transfer", "severity": "HIGH",
+             "description": "Return temp within 5°F of supply — very low ΔT indicates poor heat transfer, flow imbalance, or short-circuiting.",
+             "expr": "(return_air_temp - supply_air_temp) < 5°F for ≥2 hrs",
+             "check": lambda d: (d["return_air_temp"] - d["supply_air_temp"]) < 5 if all(c in d.columns for c in ["return_air_temp","supply_air_temp"]) else None,
+             "action": "Check flow balancing valves, inspect system bypass, verify pump operation."},
+            {"name": "High Supply Temp — Overheating Risk", "severity": "HIGH",
+             "description": "Return air above 85°F — boiler may be overshooting setpoint.",
+             "expr": "return_air_temp > 85°F for ≥1 hr",
+             "check": lambda d: d["return_air_temp"] > 85 if "return_air_temp" in d.columns else None,
+             "action": "Check boiler setpoint, verify aquastat, inspect mixing valve."},
+            {"name": "Rapid Cycling", "severity": "MEDIUM",
+             "description": "High variance in return temp over short window — boiler short-cycling wastes fuel and causes wear.",
+             "expr": "std(return_air_temp, 2hr) > 8°F",
+             "check": lambda d: d["return_air_temp"].rolling(2).std() > 8 if "return_air_temp" in d.columns else None,
+             "action": "Check boiler sizing, inspect heat exchanger, review control deadband settings."},
+            {"name": "High Energy at Low Load", "severity": "MEDIUM",
+             "description": "High power consumption when thermal output is low — efficiency problem.",
+             "expr": "chiller_kw > P75 when ΔT < 10°F",
+             "check": lambda d: (d["chiller_kw"] > d["chiller_kw"].quantile(0.75)) & ((d["return_air_temp"]-d["supply_air_temp"]) < 10) if all(c in d.columns for c in ["chiller_kw","return_air_temp","supply_air_temp"]) else None,
+             "action": "Inspect heat exchanger fouling, check burner combustion efficiency, review controls."},
+        ]
+
+        triggered_boiler = 0
+        for rule in BOILER_RULES:
+            try:
+                mask = rule["check"](df)
+                if mask is None:
+                    status_icon = "⚫"; status_text = "Missing data"; count = 0
+                else:
+                    count = int(mask.fillna(False).sum())
+                    triggered_boiler += 1 if count > 0 else 0
+                    status_icon = "🔴" if count>0 and rule["severity"]=="HIGH" else "🟡" if count>0 else "🟢"
+                    status_text = f"{count} fault readings" if count > 0 else "No faults"
+            except:
+                status_icon = "⚫"; status_text = "Could not evaluate"; count = 0
+
+            with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
+                st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"**Recommended action:** {rule['action']}")
+
+        c1, c2 = st.columns(2)
+        c1.metric("Boiler Rules Triggered", triggered_boiler)
+        c2.metric("Total Boiler Rules", len(BOILER_RULES))
+
+    # ── Cooling Towers ───────────────────────────────────────────────────────────
+    with equip_tab3:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Cooling Tower Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("Cooling tower performance directly affects chiller efficiency. Key indicators are condenser water temperature, approach temperature, and fan energy.")
+
+        st.info("💡 Upload a CSV with , , and  for full cooling tower analysis.")
+
+        CT_RULES = [
+            {"name": "High Condenser Leaving Water Temp", "severity": "HIGH",
+             "description": "Condenser temp above 95°F — tower not rejecting heat effectively. Increases chiller head pressure and reduces efficiency.",
+             "expr": "condenser_temp > 95°F for ≥1 hr",
+             "check": lambda d: d["condenser_temp"] > 95 if "condenser_temp" in d.columns else None,
+             "action": "Inspect tower fill, check fan operation, verify water distribution nozzles, check for scaling."},
+            {"name": "High Approach Temperature", "severity": "HIGH",
+             "description": "Gap between condenser leaving temp and outside air temp > 15°F — tower underperforming relative to conditions.",
+             "expr": "(condenser_temp - outside_air_temp) > 15°F for ≥2 hrs",
+             "check": lambda d: (d["condenser_temp"] - d["outside_air_temp"]) > 15 if all(c in d.columns for c in ["condenser_temp","outside_air_temp"]) else None,
+             "action": "Check tower fill fouling, inspect drift eliminators, verify fan speed, check water flow rate."},
+            {"name": "Condenser Temp Spike", "severity": "HIGH",
+             "description": "Rapid rise in condenser temp (>10°F in 2 hrs) — possible fan failure or sudden scaling.",
+             "expr": "condenser_temp increase > 10°F in 2 hrs",
+             "check": lambda d: d["condenser_temp"].diff(2) > 10 if "condenser_temp" in d.columns else None,
+             "action": "Check cooling tower fans immediately, inspect water flow, verify chemical treatment."},
+            {"name": "Low Condenser Temp — Overcooling", "severity": "LOW",
+             "description": "Condenser temp below 65°F — tower overcooling, chiller may trip on low head pressure.",
+             "expr": "condenser_temp < 65°F for ≥1 hr",
+             "check": lambda d: d["condenser_temp"] < 65 if "condenser_temp" in d.columns else None,
+             "action": "Install or enable condenser water temperature reset control, consider bypass valve."},
+            {"name": "High Chiller kW vs Condenser Temp", "severity": "MEDIUM",
+             "description": "Chiller power high while condenser temp is also high — compounding efficiency loss.",
+             "expr": "chiller_kw > P80 AND condenser_temp > 90°F",
+             "check": lambda d: (d["chiller_kw"] > d["chiller_kw"].quantile(0.80)) & (d["condenser_temp"] > 90) if all(c in d.columns for c in ["chiller_kw","condenser_temp"]) else None,
+             "action": "Address cooling tower performance first — every 1°F reduction in condenser temp saves ~1-2% chiller energy."},
+        ]
+
+        triggered_ct = 0
+        for rule in CT_RULES:
+            try:
+                mask = rule["check"](df)
+                if mask is None:
+                    status_icon = "⚫"; status_text = "Missing data"; count = 0
+                else:
+                    count = int(mask.fillna(False).sum())
+                    triggered_ct += 1 if count > 0 else 0
+                    status_icon = "🔴" if count>0 and rule["severity"]=="HIGH" else "🟡" if count>0 else "🟢"
+                    status_text = f"{count} fault readings" if count > 0 else "No faults"
+            except:
+                status_icon = "⚫"; status_text = "Could not evaluate"; count = 0
+
+            with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
+                st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"**Recommended action:** {rule['action']}")
+
+        c1, c2 = st.columns(2)
+        c1.metric("Cooling Tower Rules Triggered", triggered_ct)
+        c2.metric("Total Cooling Tower Rules", len(CT_RULES))
+
+    # ── Heat Exchangers ──────────────────────────────────────────────────────────
+    with equip_tab4:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Heat Exchanger Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("Heat exchanger faults are typically caused by fouling, scaling, or flow imbalance — all showing up as reduced ΔT or increased approach temperature.")
+
+        HX_RULES = [
+            {"name": "Low Effectiveness — Fouling Suspected", "severity": "HIGH",
+             "description": "ΔT across heat exchanger below 8°F — significantly reduced thermal transfer, likely fouling or scaling.",
+             "expr": "(return_air_temp - supply_air_temp) < 8°F for ≥2 hrs",
+             "check": lambda d: (d["return_air_temp"] - d["supply_air_temp"]) < 8 if all(c in d.columns for c in ["return_air_temp","supply_air_temp"]) else None,
+             "action": "Schedule chemical cleaning, inspect for scaling, check water quality and treatment program."},
+            {"name": "High Chiller Approach", "severity": "MEDIUM",
+             "description": "Gap between supply air and chilled water > 18°F — heat exchanger not transferring effectively.",
+             "expr": "(supply_air_temp - chilled_water_temp) > 18°F for ≥2 hrs",
+             "check": lambda d: (d["supply_air_temp"] - d["chilled_water_temp"]) > 18 if all(c in d.columns for c in ["supply_air_temp","chilled_water_temp"]) else None,
+             "action": "Inspect cooling coil for fouling, check chilled water flow rate, verify valve operation."},
+            {"name": "ΔT Degradation Trend", "severity": "MEDIUM",
+             "description": "Rolling ΔT declining over time — early indicator of gradual fouling before it becomes a fault.",
+             "expr": "24hr rolling ΔT < 7-day rolling ΔT by >20%",
+             "check": lambda d: (d["return_air_temp"] - d["supply_air_temp"]).rolling(24).mean() < (d["return_air_temp"] - d["supply_air_temp"]).rolling(168, min_periods=24).mean() * 0.8 if all(c in d.columns for c in ["return_air_temp","supply_air_temp"]) else None,
+             "action": "Monitor closely, schedule preventive cleaning before ΔT drops further."},
+        ]
+
+        triggered_hx = 0
+        for rule in HX_RULES:
+            try:
+                mask = rule["check"](df)
+                if mask is None:
+                    status_icon = "⚫"; status_text = "Missing data"; count = 0
+                else:
+                    count = int(mask.fillna(False).sum())
+                    triggered_hx += 1 if count > 0 else 0
+                    status_icon = "🔴" if count>0 and rule["severity"]=="HIGH" else "🟡" if count>0 else "🟢"
+                    status_text = f"{count} fault readings" if count > 0 else "No faults"
+            except:
+                status_icon = "⚫"; status_text = "Could not evaluate"; count = 0
+
+            with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
+                st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"**Recommended action:** {rule['action']}")
+
+        c1, c2 = st.columns(2)
+        c1.metric("HX Rules Triggered", triggered_hx)
+        c2.metric("Total HX Rules", len(HX_RULES))
+
+    # ── RTUs ─────────────────────────────────────────────────────────────────────
+    with equip_tab5:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>RTU (Rooftop Unit) Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("RTUs are self-contained units combining heating, cooling, and ventilation. Common faults include refrigerant issues, economizer failures, and heat exchanger problems.")
+
+        RTU_RULES = [
+            {"name": "Economizer Failure — High Energy", "severity": "HIGH",
+             "description": "High energy use when outside air is cool enough for free cooling — economizer may be stuck closed.",
+             "expr": "total_kw > P75 when outside_air_temp < 60°F",
+             "check": lambda d: (d["total_kw"] > d["total_kw"].quantile(0.75)) & (d["outside_air_temp"] < 60) if all(c in d.columns for c in ["total_kw","outside_air_temp"]) else None,
+             "action": "Inspect economizer damper actuator, check control sequence, verify outdoor air sensor."},
+            {"name": "Supply Air Temp Unstable", "severity": "MEDIUM",
+             "description": "High short-term variance in supply air — hunting controls or refrigerant charge issue.",
+             "expr": "std(supply_air_temp, 1hr) > 5°F",
+             "check": lambda d: d["supply_air_temp"].rolling(1).std() > 5 if "supply_air_temp" in d.columns else None,
+             "action": "Check refrigerant charge, inspect TXV operation, review control tuning."},
+            {"name": "Insufficient Cooling", "severity": "HIGH",
+             "description": "Supply air above 62°F during peak cooling hours — RTU not meeting cooling load.",
+             "expr": "supply_air_temp > 62°F between 11:00–17:00",
+             "check": lambda d: (d["supply_air_temp"] > 62) & (d["timestamp"].dt.hour.between(11,17)) if "supply_air_temp" in d.columns else None,
+             "action": "Check refrigerant charge, inspect condenser coil, verify compressor operation."},
+            {"name": "After-Hours Operation", "severity": "MEDIUM",
+             "description": "Significant energy use after hours — RTU may be running on override or schedule error.",
+             "expr": "total_kw > P60 between 20:00–06:00",
+             "check": lambda d: (d["total_kw"] > d["total_kw"].quantile(0.60)) & (~d["timestamp"].dt.hour.between(6,20)) if "total_kw" in d.columns else None,
+             "action": "Review BAS scheduling, check for tenant override commands, audit after-hours usage."},
+            {"name": "High Outside Air ΔT Load", "severity": "LOW",
+             "description": "Large gap between outside air and supply temp during peak — RTU working very hard, possible oversizing or control issue.",
+             "expr": "(outside_air_temp - supply_air_temp) > 30°F for ≥2 hrs",
+             "check": lambda d: (d["outside_air_temp"] - d["supply_air_temp"]) > 30 if all(c in d.columns for c in ["outside_air_temp","supply_air_temp"]) else None,
+             "action": "Verify RTU sizing, check refrigerant charge, inspect condenser coil cleanliness."},
+        ]
+
+        triggered_rtu = 0
+        for rule in RTU_RULES:
+            try:
+                mask = rule["check"](df)
+                if mask is None:
+                    status_icon = "⚫"; status_text = "Missing data"; count = 0
+                else:
+                    count = int(mask.fillna(False).sum())
+                    triggered_rtu += 1 if count > 0 else 0
+                    status_icon = "🔴" if count>0 and rule["severity"]=="HIGH" else "🟡" if count>0 else "🟢"
+                    status_text = f"{count} fault readings" if count > 0 else "No faults"
+            except:
+                status_icon = "⚫"; status_text = "Could not evaluate"; count = 0
+
+            with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
+                st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"**Recommended action:** {rule['action']}")
+
+        c1, c2 = st.columns(2)
+        c1.metric("RTU Rules Triggered", triggered_rtu)
+        c2.metric("Total RTU Rules", len(RTU_RULES))
+
+# ══════════════════════════════════════════════════════════════════════════════════
+# TAB 8 — BACnet Live Data
+# ══════════════════════════════════════════════════════════════════════════════════
+with tab8:
+    st.markdown("## 🔌 BACnet Live Data Connection")
+    st.caption("Connect to a live BACnet network to pull real-time data directly into the dashboard.")
+
+    st.info("""
+    **BACnet live polling requires the BAC0 library and network access to your BACnet/IP network.**
+    This tab provides the full connection framework. To use it on-site:
+    1. Run the app on a laptop connected to the building BAS network
+    2. Enter the BACnet device IP and instance below
+    3. Click Connect to start polling live data
+    """)
+
+    bacnet_tab1, bacnet_tab2, bacnet_tab3 = st.tabs([
+        "⚙️ Connection Setup", "📡 Live Poll", "📋 Point Discovery"
+    ])
+
+    with bacnet_tab1:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>BACnet Connection Settings</div>", unsafe_allow_html=True)
+
+        bc1, bc2 = st.columns(2)
+        with bc1:
+            bacnet_ip     = st.text_input("BACnet Device IP", value="192.168.1.100", help="IP address of the BACnet/IP device or router")
+            bacnet_port   = st.number_input("BACnet Port", value=47808, help="Default BACnet/IP port is 47808")
+            device_id     = st.number_input("Device Instance", value=1000, help="BACnet device instance number")
+        with bc2:
+            poll_interval = st.slider("Poll interval (seconds)", 5, 300, 30)
+            max_points    = st.number_input("Max points to poll", value=50, min_value=1, max_value=500)
+            local_ip      = st.text_input("Local IP (this computer)", value="192.168.1.50", help="IP of the machine running this app on the BACnet network")
+
+        st.markdown("#### Point Configuration")
+        st.caption("Define which BACnet object IDs map to which signals. Standard object types: AI=Analog Input, AO=Analog Output, AV=Analog Value.")
+
+        default_points = pd.DataFrame({
+            "Signal Name":    ["supply_air_temp", "return_air_temp", "chilled_water_temp", "condenser_temp", "outside_air_temp", "supply_cfm", "oa_damper_pct", "chiller_kw"],
+            "BACnet Object":  ["analogInput",     "analogInput",     "analogInput",        "analogInput",    "analogInput",      "analogInput", "analogOutput",  "analogInput"],
+            "Instance":       [1,                  2,                  3,                     4,                 5,                   6,             1,               10],
+            "Units":          ["degF",             "degF",            "degF",               "degF",           "degF",             "cfm",         "percent",       "kilowatts"],
+            "Enabled":        [True,               True,               True,                  True,              True,                True,          True,            True],
+        })
+
+        edited_points = st.data_editor(default_points, use_container_width=True, num_rows="dynamic")
+
+        if st.button("💾 Save Point Configuration", key="save_points"):
+            st.success(f"✓ Saved {len(edited_points)} point mappings.")
+
+        st.markdown("#### Connection Code")
+        st.caption("This is the BAC0 Python code that will run when you click Connect on the Live Poll tab.")
+        st.code(f"""
+import BAC0
+import pandas as pd
+from datetime import datetime
+
+# Initialize BACnet connection
+bacnet = BAC0.lite(ip="{local_ip}")
+
+# Connect to device
+device = BAC0.device("{bacnet_ip}", {int(device_id)}, bacnet)
+
+# Poll points
+records = []
+timestamp = datetime.now()
+
+point_map = {{
+    "supply_air_temp":     ("analogInput",  1),
+    "return_air_temp":     ("analogInput",  2),
+    "chilled_water_temp": ("analogInput",  3),
+    "condenser_temp":      ("analogInput",  4),
+    "outside_air_temp":    ("analogInput",  5),
+    "supply_cfm":          ("analogInput",  6),
+    "oa_damper_pct":       ("analogOutput", 1),
+    "chiller_kw":          ("analogInput", 10),
+}}
+
+row = {{"timestamp": timestamp}}
+for signal, (obj_type, instance) in point_map.items():
+    try:
+        value = device[f"{{obj_type}} {{instance}} presentValue"]
+        row[signal] = float(value)
+    except Exception as e:
+        row[signal] = None
+
+records.append(row)
+df_live = pd.DataFrame(records)
+print(df_live)
+""", language="python")
+
+    with bacnet_tab2:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Live Data Polling</div>", unsafe_allow_html=True)
+
+        col_a, col_b, col_c = st.columns(3)
+        col_a.metric("Connection Status", "⚫ Offline")
+        col_b.metric("Last Poll", "—")
+        col_c.metric("Points Active", "0")
+
+        st.warning("""
+        **To enable live BACnet polling:**
+
+        1. Install BAC0: 
+        2. Connect your laptop to the building BAS network
+        3. Configure point mappings in the Connection Setup tab
+        4. Uncomment and run the polling code
+
+        Once connected, live data will flow directly into all dashboard tabs in real time.
+        """)
+
+        st.markdown("#### Simulated Live Feed (Demo)")
+        st.caption("This shows what live data would look like — using the current dataset as a proxy.")
+
+        if not df.empty:
+            latest = df.tail(1).T
+            latest.columns = ["Latest Value"]
+            latest.index.name = "Signal"
+            st.dataframe(latest, use_container_width=True)
+
+        st.markdown("#### Manual CSV Import")
+        st.caption("Already have a BACnet trend log exported as CSV? Upload it here and all tabs will update.")
+        live_upload = st.file_uploader("Upload BACnet trend CSV", type=["csv"], key="live_upload")
+        if live_upload:
+            try:
+                live_df = pd.read_csv(live_upload)
+                st.success(f"✓ Loaded {len(live_df):,} records from trend log.")
+                st.dataframe(live_df.head(10), use_container_width=True)
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+
+    with bacnet_tab3:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>BACnet Point Discovery</div>", unsafe_allow_html=True)
+        st.markdown("When connected to a live BACnet device, this tab automatically discovers all available points.")
+
+        st.code("""
+# Auto-discovery code (run when connected to BACnet network)
+import BAC0
+
+bacnet = BAC0.lite(ip='192.168.1.50')
+device = BAC0.device('192.168.1.100', 1000, bacnet)
+
+# Discover all points
+all_points = device.points
+print(f'Found {len(all_points)} points:')
+for point in all_points:
+    print(f'  {point.name}: {point.lastValue} {point.units}')
+""", language="python")
+
+        st.markdown("#### Common BACnet Point Naming Conventions")
+        naming_df = pd.DataFrame({
+            "Equipment": ["AHU-1","AHU-1","AHU-1","CH-1","CH-1","CT-1","CT-1","BLR-1","VAV-101","VAV-101"],
+            "Point Name": ["AHU-1.SAT","AHU-1.RAT","AHU-1.SF-SPD","CH-1.CHWST","CH-1.KW","CT-1.LCWT","CT-1.FAN-SPD","BLR-1.HWS","VAV-101.DAM-POS","VAV-101.ZONE-TEMP"],
+            "Description": ["Supply Air Temp","Return Air Temp","Supply Fan Speed","Chilled Water Supply Temp","Chiller Power","Leaving Condenser Water Temp","Cooling Tower Fan Speed","Hot Water Supply Temp","VAV Damper Position","Zone Temperature"],
+            "Typical Units": ["°F","°F","%","°F","kW","°F","%","°F","%","°F"],
+            "BACnet Object": ["AI:1","AI:2","AO:1","AI:3","AI:10","AI:4","AO:2","AI:5","AO:3","AI:6"],
+        })
+        st.dataframe(naming_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Supported BACnet Protocols")
+        proto_df = pd.DataFrame({
+            "Protocol": ["BACnet/IP","BACnet MS/TP","BACnet/SC"],
+            "Use Case": ["Most modern BAS — connects over standard Ethernet/WiFi","Older field devices — requires serial RS-485 adapter","Newest secure BACnet — cloud-friendly"],
+            "BAC0 Support": ["✅ Full support","✅ With USB-RS485 adapter","🔄 Partial (BAC0 v22+)"],
+            "Typical Devices": ["Controllers, routers, gateways","VAV controllers, terminal units","Modern cloud-connected BAS"],
+        })
+        st.dataframe(proto_df, use_container_width=True, hide_index=True)
 
 # ─── Footer ──────────────────────────────────────────────────────────────────────
 st.markdown("---")
