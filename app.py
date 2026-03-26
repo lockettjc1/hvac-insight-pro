@@ -258,9 +258,9 @@ def generate_sample_data(days=30):
 
     # Inject anomalies
     anomaly_idx = rng.choice(n, size=int(n * 0.03), replace=False)
-    supply_air  = supply_air.copy()
-    chiller_kw  = chiller_kw.copy()
-    condenser   = condenser.copy()
+    supply_air  = np.array(supply_air, dtype=float)
+    chiller_kw  = np.array(chiller_kw, dtype=float)
+    condenser   = np.array(condenser, dtype=float)
     supply_air[anomaly_idx]  += rng.choice([-15, 15], size=len(anomaly_idx))
     chiller_kw[anomaly_idx]  += rng.choice([-40, 60], size=len(anomaly_idx))
     condenser[anomaly_idx]   += rng.choice([20, 25], size=len(anomaly_idx))
