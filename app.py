@@ -198,9 +198,10 @@ div[data-testid="stFileUploader"] {
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="#161b22",
     plot_bgcolor="#0d1117",
-    font=dict(color="#e6edf3", family="DM Sans"),
-    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d"),
-    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d"),
+    font=dict(color="#e6edf3", family="DM Sans", size=13),
+    title_font=dict(color="#e6edf3", size=14),
+    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
+    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
     margin=dict(l=48, r=24, t=48, b=40),
     legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="#30363d", font=dict(color="#e6edf3", size=13)),
 )
