@@ -198,12 +198,11 @@ div[data-testid="stFileUploader"] {
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="#161b22",
     plot_bgcolor="#0d1117",
-    font=dict(color="#e6edf3", family="DM Sans", size=13),
-    title_font=dict(color="#e6edf3", size=14),
-    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
-    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
+    font=dict(color="#8b949e", family="DM Sans"),
+    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d"),
+    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d"),
     margin=dict(l=48, r=24, t=48, b=40),
-    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="#30363d", font=dict(color="#e6edf3", size=13)),
+    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="#30363d"),
 )
 
 COLORS = {
@@ -259,9 +258,9 @@ def generate_sample_data(days=30):
 
     # Inject anomalies
     anomaly_idx = rng.choice(n, size=int(n * 0.03), replace=False)
-    supply_air  = np.array(supply_air, dtype=float)
-    chiller_kw  = np.array(chiller_kw, dtype=float)
-    condenser   = np.array(condenser, dtype=float)
+    supply_air = np.array(supply_air)
+    chiller_kw = np.array(chiller_kw)
+    condenser  = np.array(condenser)
     supply_air[anomaly_idx]  += rng.choice([-15, 15], size=len(anomaly_idx))
     chiller_kw[anomaly_idx]  += rng.choice([-40, 60], size=len(anomaly_idx))
     condenser[anomaly_idx]   += rng.choice([20, 25], size=len(anomaly_idx))
@@ -2687,23 +2686,18 @@ for point in all_points:
 # TAB 9 — Report Generator
 # ══════════════════════════════════════════════════════════════════════════════════
 with tab9:
-    try:
-        from reportlab.lib.pagesizes import letter
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.lib import colors
-        from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
-                                        TableStyle, PageBreak, HRFlowable)
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-        from docx import Document as DocxDocument
-        from docx.shared import Inches, Pt, RGBColor
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
-        from docx.enum.table import WD_TABLE_ALIGNMENT
-        import io
-        REPORT_LIBS_OK = True
-    except ImportError as e:
-        REPORT_LIBS_OK = False
-        st.error(f"Report libraries not installed: {e}. Add reportlab and python-docx to requirements.txt")
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
+                                    TableStyle, PageBreak, HRFlowable)
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from docx import Document as DocxDocument
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+    import io
 
     st.markdown("## 📄 Report Generator")
     st.caption("Auto-generate a professional client report from your dashboard analysis — then download and edit.")
