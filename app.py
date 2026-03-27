@@ -64,7 +64,7 @@ section[data-testid="stSidebar"] * { color: #e6edf3 !important; }
     font-size: 10px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #8b949e;
+    color: #4a5f72;
     margin-bottom: 6px;
 }
 .metric-value {
@@ -77,7 +77,7 @@ section[data-testid="stSidebar"] * { color: #e6edf3 !important; }
 .metric-delta {
     font-size: 12px;
     margin-top: 6px;
-    color: #8b949e;
+    color: #c5d0dc;
 }
 .metric-delta.up   { color: #2ecc71; }
 .metric-delta.down { color: #ff6b6b; }
@@ -126,10 +126,10 @@ section[data-testid="stSidebar"] * { color: #e6edf3 !important; }
 }
 
 /* Streamlit override bits */
-div[data-testid="stMetric"] label { color: #8b949e !important; }
+div[data-testid="stMetric"] label { color: #c5d0dc !important; }
 div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #e6edf3 !important; }
 .stTabs [data-baseweb="tab-list"] { background-color: #161b22; border-radius: 8px; }
-.stTabs [data-baseweb="tab"] { color: #8b949e; }
+.stTabs [data-baseweb="tab"] { color: #c5d0dc; }
 .stTabs [aria-selected="true"] { color: #00b4d8 !important; }
 div[data-testid="stFileUploader"] {
     background: #161b22;
@@ -178,7 +178,7 @@ div[data-testid="stFileUploader"] {
     display: inline-block;
     margin-bottom: 6px;
 }
-.rule-desc { font-size: 12px; color: #8b949e; }
+.rule-desc { font-size: 12px; color: #1a2f4a; }
 .severity-high   { color: #ff6b6b; font-weight: 700; font-size: 11px; font-family: 'Space Mono', monospace; }
 .severity-medium { color: #f7c948; font-weight: 700; font-size: 11px; font-family: 'Space Mono', monospace; }
 .severity-low    { color: #2ecc71; font-weight: 700; font-size: 11px; font-family: 'Space Mono', monospace; }
@@ -748,7 +748,7 @@ df["is_anomaly"] = anom_df["is_anomaly"].values
 
 # ─── Header ──────────────────────────────────────────────────────────────────────
 st.markdown("# ❄️ HVAC Insight Pro")
-st.markdown(f"<span style='color:#8b949e;font-family:Space Mono,monospace;font-size:12px'>"
+st.markdown(f"<span style='color:#1a2f4a;font-family:Space Mono,monospace;font-size:12px'>"
             f"Analysing {len(df):,} records · "
             f"{df['timestamp'].min().strftime('%b %d %Y')} → {df['timestamp'].max().strftime('%b %d %Y')}"
             f"</span>", unsafe_allow_html=True)
@@ -2236,7 +2236,7 @@ with tab7:
         color = {"danger": "#ff6b6b", "warning": "#f7c948", "good": "#2ecc71", "default": "#00b4d8"}.get(status, "#00b4d8")
         st.markdown(f"""<div style="background:#161b22;border:1px solid #30363d;border-top:3px solid {color};
         border-radius:10px;padding:16px 20px;margin-bottom:10px">
-        <div style="font-family:Space Mono,monospace;font-size:10px;letter-spacing:2px;color:#8b949e;text-transform:uppercase">{label}</div>
+        <div style="font-family:Space Mono,monospace;font-size:10px;letter-spacing:2px;color:#c5d0dc;text-transform:uppercase">{label}</div>
         <div style="font-family:Space Mono,monospace;font-size:24px;font-weight:700;color:#e6edf3">{value}</div>
         </div>""", unsafe_allow_html=True)
 
@@ -2295,7 +2295,7 @@ with tab7:
 
             with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
                 st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#1a2f4a;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
                 st.markdown(f"**Recommended action:** {rule['action']}")
                 sev_color = "#ff6b6b" if rule["severity"]=="HIGH" else "#f7c948" if rule["severity"]=="MEDIUM" else "#2ecc71"
                 st.markdown(f"<span style='color:{sev_color};font-family:Space Mono,monospace;font-size:11px;font-weight:700'>{rule['severity']}</span>", unsafe_allow_html=True)
@@ -2350,7 +2350,7 @@ with tab7:
 
             with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
                 st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#1a2f4a;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
                 st.markdown(f"**Recommended action:** {rule['action']}")
 
         c1, c2 = st.columns(2)
@@ -2408,7 +2408,7 @@ with tab7:
 
             with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
                 st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#1a2f4a;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
                 st.markdown(f"**Recommended action:** {rule['action']}")
 
         c1, c2 = st.columns(2)
@@ -2454,7 +2454,7 @@ with tab7:
 
             with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
                 st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#1a2f4a;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
                 st.markdown(f"**Recommended action:** {rule['action']}")
 
         c1, c2 = st.columns(2)
@@ -2510,7 +2510,7 @@ with tab7:
 
             with st.expander(f"{status_icon} **{rule['name']}** — {status_text}", expanded=count>0 and rule["severity"]=="HIGH"):
                 st.markdown(f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:#8b949e;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#1a2f4a;font-size:12px'>{rule['description']}</p>", unsafe_allow_html=True)
                 st.markdown(f"**Recommended action:** {rule['action']}")
 
         c1, c2 = st.columns(2)
