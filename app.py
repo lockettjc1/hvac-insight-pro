@@ -2687,18 +2687,23 @@ for point in all_points:
 # TAB 9 — Report Generator
 # ══════════════════════════════════════════════════════════════════════════════════
 with tab9:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.lib import colors
-    from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
-                                    TableStyle, PageBreak, HRFlowable)
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from docx import Document as DocxDocument
-    from docx.shared import Inches, Pt, RGBColor
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.enum.table import WD_TABLE_ALIGNMENT
-    import io
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
+                                        TableStyle, PageBreak, HRFlowable)
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        from docx import Document as DocxDocument
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.enum.table import WD_TABLE_ALIGNMENT
+        import io
+        REPORT_LIBS_OK = True
+    except ImportError as e:
+        REPORT_LIBS_OK = False
+        st.error(f"Report libraries not installed: {e}. Add reportlab and python-docx to requirements.txt")
 
     st.markdown("## 📄 Report Generator")
     st.caption("Auto-generate a professional client report from your dashboard analysis — then download and edit.")
