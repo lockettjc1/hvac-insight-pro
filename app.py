@@ -198,11 +198,12 @@ div[data-testid="stFileUploader"] {
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="#161b22",
     plot_bgcolor="#0d1117",
-    font=dict(color="#8b949e", family="DM Sans"),
-    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d"),
-    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d"),
+    font=dict(color="#e6edf3", family="DM Sans", size=13),
+    title_font=dict(color="#e6edf3", size=14),
+    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
+    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
     margin=dict(l=48, r=24, t=48, b=40),
-    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="#30363d"),
+    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="#30363d", font=dict(color="#e6edf3", size=13)),
 )
 
 COLORS = {
@@ -258,9 +259,9 @@ def generate_sample_data(days=30):
 
     # Inject anomalies
     anomaly_idx = rng.choice(n, size=int(n * 0.03), replace=False)
-    supply_air = np.array(supply_air)
-    chiller_kw = np.array(chiller_kw)
-    condenser  = np.array(condenser)
+    supply_air  = np.array(supply_air, dtype=float)
+    chiller_kw  = np.array(chiller_kw, dtype=float)
+    condenser   = np.array(condenser, dtype=float)
     supply_air[anomaly_idx]  += rng.choice([-15, 15], size=len(anomaly_idx))
     chiller_kw[anomaly_idx]  += rng.choice([-40, 60], size=len(anomaly_idx))
     condenser[anomaly_idx]   += rng.choice([20, 25], size=len(anomaly_idx))
@@ -2686,21 +2687,11 @@ for point in all_points:
 # TAB 9 — Report Generator
 # ══════════════════════════════════════════════════════════════════════════════════
 with tab9:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.lib import colors
-    from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
-                                    TableStyle, PageBreak, HRFlowable)
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from docx import Document as DocxDocument
-    from docx.shared import Inches, Pt, RGBColor
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.enum.table import WD_TABLE_ALIGNMENT
-    import io
+    import io, json
+    from datetime import datetime
 
     st.markdown("## 📄 Report Generator")
-    st.caption("Auto-generate a professional client report from your dashboard analysis — then download and edit.")
+    st.caption("Auto-generate a professional client report from your dashboard analysis.")
 
     # ── Report Settings ──────────────────────────────────────────────────────────
     st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Report Settings</div>", unsafe_allow_html=True)
@@ -2710,17 +2701,12 @@ with tab9:
         report_title     = st.text_input("Report Title", value="HVAC Energy Analysis Report")
         client_name      = st.text_input("Client / Building Name", value="[Client Name]")
         building_address = st.text_input("Building Address", value="[Building Address]")
-        prepared_by      = st.text_input("Prepared By", value="[Your Name], ME, MBA")
+        prepared_by      = st.text_input("Prepared By", value="Jeremy Lockett, ME, MBA")
     with r2:
-        company_name     = st.text_input("Your Company Name", value="[Your Company]")
+        company_name     = st.text_input("Your Company Name", value="ERC — Energy Recovery Consulting")
         report_date      = st.text_input("Report Date", value=datetime.now().strftime("%B %d, %Y"))
         electricity_rate = st.number_input("Electricity Rate ($/kWh)", value=0.12, step=0.01, format="%.3f")
-        currency         = st.selectbox("Currency", ["USD ($)", "EUR (€)", "GBP (£)"])
-
-    currency_sym = {"USD ($)": "$", "EUR (€)": "€", "GBP (£)": "£"}.get(currency, "$")
-
-    st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin:24px 0 16px 0'>Findings & Recommendations</div>", unsafe_allow_html=True)
-    st.caption("These are auto-populated from your data. Edit any field before generating.")
+        currency_sym     = "$"
 
     # ── Auto-compute findings ────────────────────────────────────────────────────
     findings = []
@@ -2729,12 +2715,11 @@ with tab9:
         avg_dt = (df["return_air_temp"] - df["supply_air_temp"]).mean()
         low_dt_hrs = int(((df["return_air_temp"] - df["supply_air_temp"]) < 10).sum())
         if low_dt_hrs > 0:
-            annual_waste = low_dt_hrs * df.get("chiller_kw", pd.Series([0])).mean() * 0.15 * electricity_rate * 8760 / max(len(df),1)
             findings.append({
                 "title": "Low Delta-T Syndrome",
                 "severity": "HIGH",
-                "description": f"Return-supply temperature differential averaged {avg_dt:.1f}°F. System spent {low_dt_hrs} hours below the 10°F design threshold, indicating poor heat transfer or flow imbalance.",
-                "recommendation": "Balance coil flow rates, inspect bypass valves, verify pump operation and chilled water flow.",
+                "description": f"Return-supply temperature differential averaged {avg_dt:.1f}°F. System spent {low_dt_hrs} hours below the 10°F design threshold.",
+                "recommendation": "Balance coil flow rates, inspect bypass valves, verify pump operation.",
                 "savings_kwh": round(low_dt_hrs * df.get("chiller_kw", pd.Series([100])).mean() * 0.10),
             })
 
@@ -2744,8 +2729,8 @@ with tab9:
             findings.append({
                 "title": "Elevated Condenser Temperature",
                 "severity": "HIGH",
-                "description": f"Condenser temperature exceeded 95°F for {high_cond_hrs} hours. Each degree above optimal operating temperature reduces chiller efficiency by approximately 1.5-2%.",
-                "recommendation": "Inspect cooling tower fill and nozzles, verify fan operation, check water treatment and scaling, clean condenser tubes.",
+                "description": f"Condenser temperature exceeded 95°F for {high_cond_hrs} hours, reducing chiller efficiency.",
+                "recommendation": "Inspect cooling tower fill, verify fan operation, check water treatment.",
                 "savings_kwh": round(high_cond_hrs * df.get("chiller_kw", pd.Series([100])).mean() * 0.02),
             })
 
@@ -2755,8 +2740,8 @@ with tab9:
             findings.append({
                 "title": "Outside Air Damper Fault",
                 "severity": "HIGH",
-                "description": f"Outside air damper measured below 5% position for {stuck_hrs} occupied hours. This indicates a potential actuator failure or controls issue creating an IAQ risk.",
-                "recommendation": "Inspect OA damper actuator, linkage, and BAS command signal. Verify damper position feedback sensor calibration.",
+                "description": f"Outside air damper measured below 5% for {stuck_hrs} occupied hours — IAQ risk.",
+                "recommendation": "Inspect OA damper actuator, linkage, and BAS command signal.",
                 "savings_kwh": 0,
             })
 
@@ -2764,41 +2749,29 @@ with tab9:
         after_hrs_mask = (~df["timestamp"].dt.hour.between(6,20)) & (df["total_kw"] > df["total_kw"].quantile(0.75))
         after_hrs_count = int(after_hrs_mask.sum())
         if after_hrs_count > 20:
-            avg_after_hrs_kw = df.loc[after_hrs_mask, "total_kw"].mean()
+            avg_ah_kw = df.loc[after_hrs_mask, "total_kw"].mean()
             findings.append({
-                "title": "Excessive After-Hours Energy Consumption",
+                "title": "Excessive After-Hours Energy",
                 "severity": "MEDIUM",
-                "description": f"Facility recorded high energy use ({avg_after_hrs_kw:.0f} kW average) during {after_hrs_count} after-hours periods (10 PM–6 AM). Equipment appears to be running when the building is unoccupied.",
-                "recommendation": "Audit BAS scheduling for all HVAC equipment. Check for tenant override commands. Implement automated after-hours setback.",
-                "savings_kwh": round(after_hrs_count * avg_after_hrs_kw * 0.40),
+                "description": f"Facility recorded {avg_ah_kw:.0f} kW average during {after_hrs_count} after-hours periods.",
+                "recommendation": "Audit BAS scheduling. Check for tenant override commands.",
+                "savings_kwh": round(after_hrs_count * avg_ah_kw * 0.40),
             })
 
-    if "chiller_kw" in df.columns:
-        overload_hrs = int((df["chiller_kw"] > df["chiller_kw"].quantile(0.95)).sum())
-        if overload_hrs > 0:
-            findings.append({
-                "title": "Chiller Overload Events",
-                "severity": "MEDIUM",
-                "description": f"Chiller power exceeded the 95th percentile threshold for {overload_hrs} hours, indicating periods of high stress that increase wear and risk of trip.",
-                "recommendation": "Review chiller staging strategy. Evaluate adding cooling capacity or demand limiting controls for peak periods.",
-                "savings_kwh": round(overload_hrs * df["chiller_kw"].mean() * 0.05),
-            })
-
-    # If no faults found, add a positive finding
     if not findings:
         findings.append({
             "title": "System Operating Within Normal Parameters",
             "severity": "LOW",
-            "description": "Analysis of the provided data period did not identify significant fault conditions. System temperatures, energy consumption, and airflow are within expected ranges.",
-            "recommendation": "Continue monthly monitoring. Consider establishing baseline KPIs for ongoing performance tracking.",
+            "description": "No significant fault conditions identified in this analysis period.",
+            "recommendation": "Continue monthly monitoring. Establish baseline KPIs.",
             "savings_kwh": 0,
         })
 
     # ── Editable findings ────────────────────────────────────────────────────────
-    total_savings_kwh = sum(f["savings_kwh"] for f in findings)
-    total_savings_usd = total_savings_kwh * electricity_rate
+    total_kwh = sum(f["savings_kwh"] for f in findings)
+    total_usd = total_kwh * electricity_rate
 
-    st.markdown(f"**{len(findings)} findings identified** — estimated annual savings potential: **{currency_sym}{total_savings_usd:,.0f}**")
+    st.markdown(f"**{len(findings)} findings identified** — estimated annual savings: **${total_usd:,.0f}**")
 
     edited_findings = []
     for i, finding in enumerate(findings):
@@ -2812,8 +2785,7 @@ with tab9:
                                      key=f"f_sev_{i}")
             f_desc = st.text_area("Description", value=finding["description"], key=f"f_desc_{i}", height=80)
             f_rec  = st.text_area("Recommendation", value=finding["recommendation"], key=f"f_rec_{i}", height=60)
-            f_save = st.number_input(f"Estimated Annual Savings (kWh)", value=finding["savings_kwh"],
-                                     min_value=0, key=f"f_save_{i}")
+            f_save = st.number_input("Estimated Annual Savings (kWh)", value=finding["savings_kwh"], min_value=0, key=f"f_save_{i}")
             edited_findings.append({
                 "title": f_title, "severity": f_sev,
                 "description": f_desc, "recommendation": f_rec,
@@ -2821,563 +2793,124 @@ with tab9:
                 "savings_usd": round(f_save * electricity_rate, 2),
             })
 
-    total_kwh  = sum(f["savings_kwh"] for f in edited_findings)
-    total_usd  = total_kwh * electricity_rate
+    total_kwh2 = sum(f["savings_kwh"] for f in edited_findings)
+    total_usd2 = total_kwh2 * electricity_rate
+    kpis_r = compute_kpis(df)
+    anom_count_r = int(df["is_anomaly"].sum()) if "is_anomaly" in df.columns else 0
+    date_range_str = f"{df['timestamp'].min().strftime('%B %d, %Y')} - {df['timestamp'].max().strftime('%B %d, %Y')}"
     high_count = sum(1 for f in edited_findings if f["severity"]=="HIGH")
     med_count  = sum(1 for f in edited_findings if f["severity"]=="MEDIUM")
 
-    # ── KPI summary for report ───────────────────────────────────────────────────
-    kpis_r = compute_kpis(df)
-    anom_count_r = int(df["is_anomaly"].sum()) if "is_anomaly" in df.columns else 0
-    date_range_str = f"{df['timestamp'].min().strftime('%B %d, %Y')} – {df['timestamp'].max().strftime('%B %d, %Y')}"
-    total_records  = len(df)
-
-    # ── Generate PDF ─────────────────────────────────────────────────────────────
-    def generate_pdf():
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter,
-                                rightMargin=0.75*inch, leftMargin=0.75*inch,
-                                topMargin=0.75*inch, bottomMargin=0.75*inch)
-        styles = getSampleStyleSheet()
-
-        # Custom styles
-        DARK  = colors.HexColor("#0d1117")
-        BLUE  = colors.HexColor("#0077b6")
-        TEAL  = colors.HexColor("#00b4d8")
-        RED   = colors.HexColor("#c0392b")
-        AMBER = colors.HexColor("#e07b00")
-        GREEN = colors.HexColor("#27ae60")
-        LGRAY = colors.HexColor("#f5f7fa")
-        MGRAY = colors.HexColor("#8b949e")
-
-        style_title = ParagraphStyle("ReportTitle", fontSize=26, fontName="Helvetica-Bold",
-                                     textColor=DARK, spaceAfter=6, alignment=TA_LEFT)
-        style_sub   = ParagraphStyle("ReportSub", fontSize=11, fontName="Helvetica",
-                                     textColor=MGRAY, spaceAfter=4)
-        style_h1    = ParagraphStyle("H1", fontSize=14, fontName="Helvetica-Bold",
-                                     textColor=BLUE, spaceBefore=18, spaceAfter=6)
-        style_h2    = ParagraphStyle("H2", fontSize=11, fontName="Helvetica-Bold",
-                                     textColor=DARK, spaceBefore=10, spaceAfter=4)
-        style_body  = ParagraphStyle("Body", fontSize=9.5, fontName="Helvetica",
-                                     textColor=DARK, spaceAfter=6, leading=14)
-        style_label = ParagraphStyle("Label", fontSize=8, fontName="Helvetica",
-                                     textColor=MGRAY, spaceAfter=2)
-        style_small = ParagraphStyle("Small", fontSize=8, fontName="Helvetica",
-                                     textColor=MGRAY, spaceAfter=4)
-
-        story = []
-
-        # ── Cover header bar ──────────────────────────────────────────────────
-        header_data = [[Paragraph(f"<font color='white'><b>{report_title}</b></font>", style_title)]]
-        header_tbl  = Table(header_data, colWidths=[7.0*inch])
-        header_tbl.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,-1), BLUE),
-            ("TOPPADDING",    (0,0), (-1,-1), 18),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 18),
-            ("LEFTPADDING",   (0,0), (-1,-1), 18),
-        ]))
-        story.append(header_tbl)
-        story.append(Spacer(1, 12))
-
-        # ── Client info block ─────────────────────────────────────────────────
-        info_data = [
-            [Paragraph("PREPARED FOR", style_label), Paragraph("PREPARED BY", style_label),
-             Paragraph("REPORT DATE", style_label)],
-            [Paragraph(f"<b>{client_name}</b>", style_body),
-             Paragraph(f"<b>{prepared_by}</b>", style_body),
-             Paragraph(f"<b>{report_date}</b>", style_body)],
-            [Paragraph(building_address, style_small),
-             Paragraph(company_name, style_small),
-             Paragraph(f"Analysis Period: {date_range_str}", style_small)],
-        ]
-        info_tbl = Table(info_data, colWidths=[2.33*inch, 2.33*inch, 2.34*inch])
-        info_tbl.setStyle(TableStyle([
-            ("BACKGROUND",    (0,0), (-1,-1), LGRAY),
-            ("TOPPADDING",    (0,0), (-1,-1), 8),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-            ("LEFTPADDING",   (0,0), (-1,-1), 10),
-            ("LINEABOVE",     (0,0), (-1,0),  1, BLUE),
-            ("LINEBELOW",     (0,-1),(-1,-1), 1, colors.HexColor("#dee2e6")),
-            ("VALIGN",        (0,0), (-1,-1), "TOP"),
-        ]))
-        story.append(info_tbl)
-        story.append(Spacer(1, 18))
-
-        # ── Executive Summary ─────────────────────────────────────────────────
-        story.append(Paragraph("1. Executive Summary", style_h1))
-        story.append(HRFlowable(width="100%", thickness=1, color=TEAL, spaceAfter=8))
-
-        summary_text = (
-            f"This report presents the findings of a remote HVAC energy analysis conducted for "
-            f"<b>{client_name}</b> covering the period {date_range_str}. "
-            f"The analysis examined {total_records:,} data points across {len(df.columns)-1} sensor channels "
-            f"using automated fault detection, anomaly scoring, and energy performance benchmarking."
-        )
-        story.append(Paragraph(summary_text, style_body))
-        story.append(Spacer(1, 8))
-
-        story.append(Paragraph(
-            f"The analysis identified <b>{len(edited_findings)} findings</b>, including "
-            f"<b>{high_count} high-severity</b> and <b>{med_count} medium-severity</b> issues. "
-            f"Implementing the recommendations in this report is estimated to reduce annual energy "
-            f"consumption by approximately <b>{total_kwh:,} kWh</b>, representing a potential "
-            f"cost savings of <b>{currency_sym}{total_usd:,.0f} per year</b> at current electricity rates.",
-            style_body
-        ))
-        story.append(Spacer(1, 12))
-
-        # KPI summary table
-        kpi_data = [
-            [Paragraph("<b>Metric</b>", style_body), Paragraph("<b>Value</b>", style_body)],
-            ["Analysis Period",        date_range_str],
-            ["Total Records Analyzed", f"{total_records:,}"],
-            ["Anomalies Detected",     str(anom_count_r)],
-            ["Avg Chiller Load",       f"{kpis_r.get('avg_chiller_kw',0):.1f} kW"],
-            ["Total Energy (Period)",  f"{kpis_r.get('total_kwh',0)/1000:.1f} MWh"],
-            ["Avg Supply-Return DT",   f"{kpis_r.get('avg_dt',0):.1f} degF"],
-            ["High Severity Findings", str(high_count)],
-            ["Est. Annual Savings",    f"{currency_sym}{total_usd:,.0f}"],
-        ]
-        kpi_tbl = Table(kpi_data, colWidths=[3.0*inch, 4.0*inch])
-        kpi_tbl.setStyle(TableStyle([
-            ("BACKGROUND",    (0,0), (-1,0),  BLUE),
-            ("TEXTCOLOR",     (0,0), (-1,0),  colors.white),
-            ("BACKGROUND",    (0,1), (-1,-1), LGRAY),
-            ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, LGRAY]),
-            ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dee2e6")),
-            ("TOPPADDING",    (0,0), (-1,-1), 6),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-            ("LEFTPADDING",   (0,0), (-1,-1), 10),
-            ("FONTNAME",      (0,1), (0,-1),  "Helvetica-Bold"),
-            ("FONTSIZE",      (0,0), (-1,-1), 9),
-        ]))
-        story.append(kpi_tbl)
-        story.append(PageBreak())
-
-        # ── Findings ──────────────────────────────────────────────────────────
-        story.append(Paragraph("2. Technical Findings", style_h1))
-        story.append(HRFlowable(width="100%", thickness=1, color=TEAL, spaceAfter=8))
-
-        for i, finding in enumerate(edited_findings):
-            sev_color = RED if finding["severity"]=="HIGH" else AMBER if finding["severity"]=="MEDIUM" else GREEN
-            sev_label = finding["severity"]
-
-            # Finding header
-            hdr_data = [[
-                Paragraph(f"<font color='white'><b>Finding {i+1}: {finding['title']}</b></font>", style_h2),
-                Paragraph(f"<font color='white'><b>{sev_label}</b></font>",
-                          ParagraphStyle("sev", fontSize=9, fontName="Helvetica-Bold",
-                                         textColor=colors.white, alignment=TA_RIGHT)),
-            ]]
-            hdr_tbl = Table(hdr_data, colWidths=[5.5*inch, 1.5*inch])
-            hdr_tbl.setStyle(TableStyle([
-                ("BACKGROUND",    (0,0), (-1,-1), sev_color),
-                ("TOPPADDING",    (0,0), (-1,-1), 8),
-                ("BOTTOMPADDING", (0,0), (-1,-1), 8),
-                ("LEFTPADDING",   (0,0), (0,-1),  10),
-                ("RIGHTPADDING",  (-1,0),(-1,-1), 10),
-                ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
-            ]))
-            story.append(hdr_tbl)
-
-            # Finding body
-            body_data = [
-                [Paragraph("<b>Observation</b>", style_label)],
-                [Paragraph(finding["description"], style_body)],
-                [Paragraph("<b>Recommended Action</b>", style_label)],
-                [Paragraph(finding["recommendation"], style_body)],
-            ]
-            if finding["savings_kwh"] > 0:
-                body_data.append([Paragraph(
-                    f"<b>Estimated Annual Savings:</b> {finding['savings_kwh']:,} kWh "
-                    f"({currency_sym}{finding['savings_usd']:,.0f} at {electricity_rate:.3f}/kWh)",
-                    ParagraphStyle("savings", fontSize=9, fontName="Helvetica-Bold",
-                                   textColor=GREEN, spaceAfter=4)
-                )])
-            body_tbl = Table(body_data, colWidths=[7.0*inch])
-            body_tbl.setStyle(TableStyle([
-                ("BACKGROUND",    (0,0), (-1,-1), colors.white),
-                ("TOPPADDING",    (0,0), (-1,-1), 4),
-                ("BOTTOMPADDING", (0,0), (-1,-1), 4),
-                ("LEFTPADDING",   (0,0), (-1,-1), 10),
-                ("LINEBELOW",     (0,-1),(-1,-1), 1, colors.HexColor("#dee2e6")),
-            ]))
-            story.append(body_tbl)
-            story.append(Spacer(1, 10))
-
-        story.append(PageBreak())
-
-        # ── Fault Event Log ───────────────────────────────────────────────────
-        story.append(Paragraph("3. Fault Event Log", style_h1))
-        story.append(HRFlowable(width="100%", thickness=1, color=TEAL, spaceAfter=8))
-
-        if "is_anomaly" in df.columns:
-            anom_df_r = df[df["is_anomaly"]].copy()
-            if not anom_df_r.empty:
-                story.append(Paragraph(
-                    f"{len(anom_df_r)} anomalous readings detected across the analysis period.",
-                    style_body))
-                story.append(Spacer(1, 6))
-
-                log_data = [["Timestamp", "Supply Temp", "Return Temp", "Chiller kW", "Total kW"]]
-                for _, row in anom_df_r.head(40).iterrows():
-                    log_data.append([
-                        str(row["timestamp"])[:16],
-                        f"{row.get('supply_air_temp','-'):.1f}F" if "supply_air_temp" in row else "-",
-                        f"{row.get('return_air_temp','-'):.1f}F" if "return_air_temp" in row else "-",
-                        f"{row.get('chiller_kw','-'):.0f}" if "chiller_kw" in row else "-",
-                        f"{row.get('total_kw','-'):.0f}" if "total_kw" in row else "-",
-                    ])
-                log_tbl = Table(log_data, colWidths=[1.8*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.6*inch])
-                log_tbl.setStyle(TableStyle([
-                    ("BACKGROUND",    (0,0), (-1,0),  BLUE),
-                    ("TEXTCOLOR",     (0,0), (-1,0),  colors.white),
-                    ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, LGRAY]),
-                    ("GRID",          (0,0), (-1,-1), 0.4, colors.HexColor("#dee2e6")),
-                    ("FONTSIZE",      (0,0), (-1,-1), 8),
-                    ("TOPPADDING",    (0,0), (-1,-1), 4),
-                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
-                    ("LEFTPADDING",   (0,0), (-1,-1), 6),
-                    ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
-                ]))
-                story.append(log_tbl)
-                if len(anom_df_r) > 40:
-                    story.append(Paragraph(f"... and {len(anom_df_r)-40} more events. See full export for complete log.", style_small))
-            else:
-                story.append(Paragraph("No anomalous readings detected in this analysis period.", style_body))
-        else:
-            story.append(Paragraph("Run anomaly detection in the Anomalies tab to populate this section.", style_body))
-
-        story.append(PageBreak())
-
-        # ── Energy Savings Summary ────────────────────────────────────────────
-        story.append(Paragraph("4. Energy Savings Estimate", style_h1))
-        story.append(HRFlowable(width="100%", thickness=1, color=TEAL, spaceAfter=8))
-
-        story.append(Paragraph(
-            f"The following table summarizes the estimated annual energy and cost savings "
-            f"associated with implementing the recommendations in this report. Savings estimates "
-            f"are based on an electricity rate of {currency_sym}{electricity_rate:.3f}/kWh.",
-            style_body
-        ))
-        story.append(Spacer(1, 8))
-
-        savings_data = [["Finding", "Severity", "Est. kWh/yr", f"Est. {currency_sym}/yr"]]
-        for f in edited_findings:
-            savings_data.append([
-                f["title"][:50] + ("..." if len(f["title"]) > 50 else ""),
-                f["severity"],
-                f"{f['savings_kwh']:,}" if f["savings_kwh"] > 0 else "—",
-                f"{currency_sym}{f['savings_usd']:,.0f}" if f["savings_usd"] > 0 else "—",
-            ])
-        savings_data.append(["TOTAL ESTIMATED SAVINGS", "", f"{total_kwh:,}", f"{currency_sym}{total_usd:,.0f}"])
-
-        sav_tbl = Table(savings_data, colWidths=[3.2*inch, 1.0*inch, 1.4*inch, 1.4*inch])
-        sav_tbl.setStyle(TableStyle([
-            ("BACKGROUND",    (0,0),  (-1,0),   BLUE),
-            ("TEXTCOLOR",     (0,0),  (-1,0),   colors.white),
-            ("ROWBACKGROUNDS",(0,1),  (-1,-2),  [colors.white, LGRAY]),
-            ("BACKGROUND",    (0,-1), (-1,-1),  colors.HexColor("#e8f5e9")),
-            ("FONTNAME",      (0,-1), (-1,-1),  "Helvetica-Bold"),
-            ("FONTNAME",      (0,0),  (-1,0),   "Helvetica-Bold"),
-            ("GRID",          (0,0),  (-1,-1),  0.4, colors.HexColor("#dee2e6")),
-            ("FONTSIZE",      (0,0),  (-1,-1),  9),
-            ("TOPPADDING",    (0,0),  (-1,-1),  6),
-            ("BOTTOMPADDING", (0,0),  (-1,-1),  6),
-            ("LEFTPADDING",   (0,0),  (-1,-1),  8),
-            ("ALIGN",         (2,0),  (-1,-1),  "RIGHT"),
-        ]))
-        story.append(sav_tbl)
-        story.append(Spacer(1, 16))
-
-        # Payback note
-        story.append(Paragraph(
-            "<b>Note:</b> Actual savings will vary based on equipment conditions, occupancy patterns, "
-            "and utility rate structures. A detailed measurement & verification (M&V) plan is recommended "
-            "following implementation of recommendations. Savings estimates follow ASHRAE Guideline 14 "
-            "methodology for retrofit isolation M&V.",
-            ParagraphStyle("note", fontSize=8, fontName="Helvetica", textColor=MGRAY,
-                           spaceAfter=6, leading=12,
-                           borderPad=8, borderColor=colors.HexColor("#dee2e6"),
-                           borderWidth=1, borderRadius=4)
-        ))
-
-        # ── Footer on last page ───────────────────────────────────────────────
-        story.append(Spacer(1, 24))
-        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#dee2e6"), spaceAfter=6))
-        story.append(Paragraph(
-            f"Report prepared by {prepared_by} | {company_name} | {report_date} | "
-            f"Generated by HVAC Insight Pro",
-            ParagraphStyle("footer", fontSize=7.5, fontName="Helvetica",
-                           textColor=MGRAY, alignment=TA_CENTER)
-        ))
-
-        doc.build(story)
-        buffer.seek(0)
-        return buffer
-
-    # ── Generate DOCX ────────────────────────────────────────────────────────────
-    def generate_docx():
-        doc = DocxDocument()
-
-        # Page margins
-        for section in doc.sections:
-            section.top_margin    = Inches(1)
-            section.bottom_margin = Inches(1)
-            section.left_margin   = Inches(1)
-            section.right_margin  = Inches(1)
-
-        def add_heading(text, level=1, color_hex="0077B6"):
-            p = doc.add_heading(text, level=level)
-            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            for run in p.runs:
-                run.font.color.rgb = RGBColor.from_string(color_hex)
-            return p
-
-        def add_body(text, bold=False, color_hex=None):
-            p = doc.add_paragraph()
-            run = p.add_run(text)
-            run.font.size = Pt(10)
-            run.bold = bold
-            if color_hex:
-                run.font.color.rgb = RGBColor.from_string(color_hex)
-            return p
-
-        def add_table_row(table, cells, bold=False, bg_color=None):
-            row = table.add_row()
-            for i, text in enumerate(cells):
-                cell = row.cells[i]
-                cell.text = str(text)
-                for para in cell.paragraphs:
-                    for run in para.runs:
-                        run.font.size = Pt(9)
-                        run.bold = bold
-            return row
-
-        # Title
-        title_p = doc.add_heading(report_title, 0)
-        title_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        for run in title_p.runs:
-            run.font.color.rgb = RGBColor(0, 119, 182)
-            run.font.size = Pt(22)
-
-        doc.add_paragraph(f"Prepared for: {client_name} | {building_address}")
-        doc.add_paragraph(f"Prepared by: {prepared_by} | {company_name}")
-        doc.add_paragraph(f"Date: {report_date} | Period: {date_range_str}")
-        doc.add_paragraph()
-
-        # Executive Summary
-        add_heading("1. Executive Summary", 1)
-        add_body(
-            f"This report presents findings from an HVAC energy analysis of {client_name} "
-            f"covering {date_range_str}. The analysis examined {total_records:,} data points "
-            f"across {len(df.columns)-1} sensor channels."
-        )
-        add_body(
-            f"{len(edited_findings)} findings were identified including {high_count} high-severity "
-            f"and {med_count} medium-severity issues. Estimated annual savings: "
-            f"{currency_sym}{total_usd:,.0f} ({total_kwh:,} kWh).",
-            bold=True, color_hex="0077B6"
-        )
-        doc.add_paragraph()
-
-        # KPI table
-        add_heading("Key Performance Indicators", 2)
-        kpi_table = doc.add_table(rows=1, cols=2)
-        kpi_table.style = "Table Grid"
-        hdr = kpi_table.rows[0].cells
-        hdr[0].text = "Metric"
-        hdr[1].text = "Value"
-        for cell in hdr:
-            for para in cell.paragraphs:
-                for run in para.runs:
-                    run.bold = True
-                    run.font.size = Pt(9)
-
-        kpi_rows = [
-            ("Analysis Period", date_range_str),
-            ("Total Records", f"{total_records:,}"),
-            ("Anomalies Detected", str(anom_count_r)),
-            ("Avg Chiller Load", f"{kpis_r.get('avg_chiller_kw',0):.1f} kW"),
-            ("Total Energy", f"{kpis_r.get('total_kwh',0)/1000:.1f} MWh"),
-            ("Avg DeltaT", f"{kpis_r.get('avg_dt',0):.1f} degF"),
-            ("Est. Annual Savings", f"{currency_sym}{total_usd:,.0f}"),
-        ]
-        for label, value in kpi_rows:
-            row = kpi_table.add_row()
-            row.cells[0].text = label
-            row.cells[1].text = value
-            for cell in row.cells:
-                for para in cell.paragraphs:
-                    for run in para.runs:
-                        run.font.size = Pt(9)
-
-        doc.add_paragraph()
-        doc.add_page_break()
-
-        # Findings
-        add_heading("2. Technical Findings", 1)
-        for i, finding in enumerate(edited_findings):
-            sev_color = "C0392B" if finding["severity"]=="HIGH" else "E07B00" if finding["severity"]=="MEDIUM" else "27AE60"
-            add_heading(f"Finding {i+1}: {finding['title']} [{finding['severity']}]", 2, sev_color)
-            add_body("Observation:", bold=True)
-            add_body(finding["description"])
-            add_body("Recommended Action:", bold=True)
-            add_body(finding["recommendation"])
-            if finding["savings_kwh"] > 0:
-                add_body(
-                    f"Estimated Annual Savings: {finding['savings_kwh']:,} kWh "
-                    f"({currency_sym}{finding['savings_usd']:,.0f})",
-                    bold=True, color_hex="27AE60"
-                )
-            doc.add_paragraph()
-
-        doc.add_page_break()
-
-        # Fault log
-        add_heading("3. Fault Event Log", 1)
-        if "is_anomaly" in df.columns:
-            anom_df_r = df[df["is_anomaly"]].copy()
-            if not anom_df_r.empty:
-                add_body(f"{len(anom_df_r)} anomalous readings detected.")
-                fault_tbl = doc.add_table(rows=1, cols=4)
-                fault_tbl.style = "Table Grid"
-                hdrs = ["Timestamp", "Supply Temp (F)", "Return Temp (F)", "Total kW"]
-                for i, h in enumerate(hdrs):
-                    fault_tbl.rows[0].cells[i].text = h
-                    for run in fault_tbl.rows[0].cells[i].paragraphs[0].runs:
-                        run.bold = True
-                        run.font.size = Pt(8)
-                for _, row in anom_df_r.head(50).iterrows():
-                    r = fault_tbl.add_row()
-                    r.cells[0].text = str(row["timestamp"])[:16]
-                    r.cells[1].text = f"{row.get('supply_air_temp','-'):.1f}" if "supply_air_temp" in row else "-"
-                    r.cells[2].text = f"{row.get('return_air_temp','-'):.1f}" if "return_air_temp" in row else "-"
-                    r.cells[3].text = f"{row.get('total_kw','-'):.0f}" if "total_kw" in row else "-"
-                    for cell in r.cells:
-                        for para in cell.paragraphs:
-                            for run in para.runs:
-                                run.font.size = Pt(8)
-            else:
-                add_body("No anomalous readings detected.")
-
-        doc.add_page_break()
-
-        # Savings summary
-        add_heading("4. Energy Savings Estimate", 1)
-        add_body(f"Electricity rate: {currency_sym}{electricity_rate:.3f}/kWh")
-        doc.add_paragraph()
-        sav_tbl = doc.add_table(rows=1, cols=4)
-        sav_tbl.style = "Table Grid"
-        for i, h in enumerate(["Finding", "Severity", "kWh/yr", f"{currency_sym}/yr"]):
-            sav_tbl.rows[0].cells[i].text = h
-            for run in sav_tbl.rows[0].cells[i].paragraphs[0].runs:
-                run.bold = True
-                run.font.size = Pt(9)
-        for f in edited_findings:
-            r = sav_tbl.add_row()
-            r.cells[0].text = f["title"]
-            r.cells[1].text = f["severity"]
-            r.cells[2].text = f"{f['savings_kwh']:,}" if f["savings_kwh"] > 0 else "-"
-            r.cells[3].text = f"{currency_sym}{f['savings_usd']:,.0f}" if f["savings_usd"] > 0 else "-"
-            for cell in r.cells:
-                for para in cell.paragraphs:
-                    for run in para.runs:
-                        run.font.size = Pt(9)
-        r = sav_tbl.add_row()
-        r.cells[0].text = "TOTAL"
-        r.cells[2].text = f"{total_kwh:,}"
-        r.cells[3].text = f"{currency_sym}{total_usd:,.0f}"
-        for cell in r.cells:
-            for para in cell.paragraphs:
-                for run in para.runs:
-                    run.bold = True
-                    run.font.size = Pt(9)
-
-        doc.add_paragraph()
-        add_body(
-            "Note: Savings estimates follow ASHRAE Guideline 14 methodology. "
-            "Actual savings will vary based on equipment conditions and utility rates.",
-            color_hex="8B949E"
-        )
-
-        buffer = io.BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-        return buffer
-
-    # ── Generate buttons ──────────────────────────────────────────────────────────
+    # ── Generate HTML Report ─────────────────────────────────────────────────────
     st.markdown("---")
     st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Generate Report</div>", unsafe_allow_html=True)
 
-    g1, g2, g3 = st.columns(3)
+    g1, g2 = st.columns(2)
 
     with g1:
-        if st.button("📄 Generate PDF Report", key="gen_pdf", use_container_width=True):
-            with st.spinner("Building PDF..."):
-                try:
-                    pdf_buffer = generate_pdf()
-                    fname = f"HVAC_Report_{client_name.replace(' ','_')}_{datetime.now().strftime('%Y%m%d')}.pdf"
-                    st.download_button(
-                        label="⬇ Download PDF",
-                        data=pdf_buffer,
-                        file_name=fname,
-                        mime="application/pdf",
-                        key="dl_pdf",
-                        use_container_width=True,
-                    )
-                    st.success("PDF ready!")
-                except Exception as e:
-                    st.error(f"PDF generation error: {e}")
+        if st.button("📄 Generate HTML Report", key="gen_html", use_container_width=True):
+            findings_html = ""
+            for i, f in enumerate(edited_findings):
+                sev_color = "#c0392b" if f["severity"]=="HIGH" else "#e07b00" if f["severity"]=="MEDIUM" else "#1a7a4a"
+                savings_line = f"<p style='color:#1a7a4a;font-weight:bold'>Estimated Annual Savings: {f['savings_kwh']:,} kWh (${f['savings_usd']:,.0f})</p>" if f["savings_kwh"] > 0 else ""
+                findings_html += f"""
+                <div style="margin-bottom:20px;border-left:4px solid {sev_color};padding-left:16px">
+                    <h3 style="color:{sev_color};margin:0">Finding {i+1}: {f["title"]} <span style="font-size:12px;background:{sev_color};color:white;padding:2px 8px;border-radius:2px">{f["severity"]}</span></h3>
+                    <p><strong>Observation:</strong> {f["description"]}</p>
+                    <p><strong>Recommendation:</strong> {f["recommendation"]}</p>
+                    {savings_line}
+                </div>"""
+
+            anom_rows = ""
+            if "is_anomaly" in df.columns:
+                anom_df_r = df[df["is_anomaly"]].head(50)
+                for _, row in anom_df_r.iterrows():
+                    anom_rows += f"<tr><td>{str(row['timestamp'])[:16]}</td><td>{row.get('supply_air_temp','-'):.1f}</td><td>{row.get('return_air_temp','-'):.1f}</td><td>{row.get('total_kw','-'):.0f}</td></tr>"
+
+            html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+            <title>{report_title}</title>
+            <style>
+                body{{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;color:#1a2f4a;line-height:1.6}}
+                h1{{color:#1a4f8a;border-bottom:3px solid #1a4f8a;padding-bottom:10px}}
+                h2{{color:#1a4f8a;border-bottom:1px solid #c8d8e8;padding-bottom:6px;margin-top:32px}}
+                table{{width:100%;border-collapse:collapse;margin:16px 0}}
+                th{{background:#1a4f8a;color:white;padding:8px 12px;text-align:left}}
+                td{{padding:7px 12px;border-bottom:1px solid #e0e8f0}}
+                tr:nth-child(even){{background:#f0f4f8}}
+                .kpi-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}}
+                .kpi-box{{background:#f0f4f8;border-left:4px solid #1a4f8a;padding:12px 16px;border-radius:2px}}
+                .kpi-label{{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#4a5f72}}
+                .kpi-value{{font-size:22px;font-weight:bold;color:#1a2f4a}}
+                .savings-box{{background:#e8f5e9;border:1px solid #81c784;padding:16px;border-radius:4px;margin:20px 0}}
+                @media print{{body{{margin:20px}}}}
+            </style></head><body>
+            <h1>❄️ {report_title}</h1>
+            <table style="margin-bottom:24px">
+                <tr><td><strong>Prepared For:</strong></td><td>{client_name}</td><td><strong>Prepared By:</strong></td><td>{prepared_by}</td></tr>
+                <tr><td><strong>Address:</strong></td><td>{building_address}</td><td><strong>Company:</strong></td><td>{company_name}</td></tr>
+                <tr><td><strong>Date:</strong></td><td>{report_date}</td><td><strong>Period:</strong></td><td>{date_range_str}</td></tr>
+            </table>
+            <h2>1. Executive Summary</h2>
+            <p>This report presents findings from an HVAC energy analysis of <strong>{client_name}</strong> covering {date_range_str}.
+            The analysis examined {len(df):,} data points across {len(df.columns)-1} sensor channels.</p>
+            <p><strong>{len(edited_findings)} findings</strong> were identified including <strong>{high_count} high-severity</strong>
+            and <strong>{med_count} medium-severity</strong> issues. Estimated annual savings:
+            <strong>${total_usd2:,.0f}</strong> ({total_kwh2:,} kWh).</p>
+            <div class="kpi-grid">
+                <div class="kpi-box"><div class="kpi-label">Analysis Period</div><div class="kpi-value" style="font-size:14px">{date_range_str}</div></div>
+                <div class="kpi-box"><div class="kpi-label">Records Analyzed</div><div class="kpi-value">{len(df):,}</div></div>
+                <div class="kpi-box"><div class="kpi-label">Anomalies Detected</div><div class="kpi-value">{anom_count_r}</div></div>
+                <div class="kpi-box"><div class="kpi-label">Avg Chiller Load</div><div class="kpi-value">{kpis_r.get("avg_chiller_kw",0):.1f} kW</div></div>
+                <div class="kpi-box"><div class="kpi-label">Total Energy</div><div class="kpi-value">{kpis_r.get("total_kwh",0)/1000:.1f} MWh</div></div>
+                <div class="kpi-box"><div class="kpi-label">High Severity Findings</div><div class="kpi-value" style="color:#c0392b">{high_count}</div></div>
+            </div>
+            <div class="savings-box">
+                <strong>💰 Estimated Annual Savings: ${total_usd2:,.0f} ({total_kwh2:,} kWh)</strong><br>
+                Based on electricity rate of ${electricity_rate:.3f}/kWh
+            </div>
+            <h2>2. Technical Findings</h2>
+            {findings_html}
+            <h2>3. Fault Event Log</h2>
+            <table>
+                <tr><th>Timestamp</th><th>Supply Temp (F)</th><th>Return Temp (F)</th><th>Total kW</th></tr>
+                {anom_rows if anom_rows else "<tr><td colspan=4>No anomalies detected</td></tr>"}
+            </table>
+            <h2>4. Energy Savings Estimate</h2>
+            <table>
+                <tr><th>Finding</th><th>Severity</th><th>Est. kWh/yr</th><th>Est. $/yr</th></tr>
+                {"".join(f"<tr><td>{f['title']}</td><td>{f['severity']}</td><td>{f['savings_kwh']:,}</td><td>${f['savings_usd']:,.0f}</td></tr>" for f in edited_findings)}
+                <tr style="font-weight:bold;background:#e8f5e9"><td>TOTAL</td><td></td><td>{total_kwh2:,}</td><td>${total_usd2:,.0f}</td></tr>
+            </table>
+            <p style="color:#4a5f72;font-size:12px;margin-top:32px;border-top:1px solid #c8d8e8;padding-top:12px">
+                Report prepared by {prepared_by} | {company_name} | {report_date} | Generated by HVAC Insight Pro<br>
+                Savings estimates follow ASHRAE Guideline 14 methodology.
+            </p>
+            </body></html>"""
+
+            fname = f"HVAC_Report_{client_name.replace(' ','_')}_{datetime.now().strftime('%Y%m%d')}.html"
+            st.download_button("⬇ Download HTML Report", data=html, file_name=fname, mime="text/html", key="dl_html")
+            st.success("✅ Report ready! Open in any browser and use File → Print → Save as PDF for a polished PDF.")
 
     with g2:
-        if st.button("📝 Generate Word Report", key="gen_docx", use_container_width=True):
-            with st.spinner("Building Word document..."):
-                try:
-                    docx_buffer = generate_docx()
-                    fname = f"HVAC_Report_{client_name.replace(' ','_')}_{datetime.now().strftime('%Y%m%d')}.docx"
-                    st.download_button(
-                        label="⬇ Download Word Doc",
-                        data=docx_buffer,
-                        file_name=fname,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        key="dl_docx",
-                        use_container_width=True,
-                    )
-                    st.success("Word doc ready!")
-                except Exception as e:
-                    st.error(f"Word generation error: {e}")
-
-    with g3:
-        if st.button("📊 Export Fault Data CSV", key="gen_csv", use_container_width=True):
+        if st.button("📊 Export Findings CSV", key="gen_csv2", use_container_width=True):
             rows = []
             for f in edited_findings:
                 rows.append({
-                    "Finding": f["title"],
-                    "Severity": f["severity"],
-                    "Description": f["description"],
-                    "Recommendation": f["recommendation"],
-                    "Est kWh/yr": f["savings_kwh"],
-                    f"Est {currency_sym}/yr": f["savings_usd"],
+                    "Finding": f["title"], "Severity": f["severity"],
+                    "Description": f["description"], "Recommendation": f["recommendation"],
+                    "Est kWh/yr": f["savings_kwh"], "Est $/yr": f["savings_usd"],
                 })
             export_df = pd.DataFrame(rows)
             fname = f"HVAC_Findings_{client_name.replace(' ','_')}_{datetime.now().strftime('%Y%m%d')}.csv"
-            st.download_button(
-                label="⬇ Download Findings CSV",
-                data=export_df.to_csv(index=False),
-                file_name=fname,
-                mime="text/csv",
-                key="dl_findings_csv",
-                use_container_width=True,
-            )
+            st.download_button("⬇ Download Findings CSV", data=export_df.to_csv(index=False),
+                               file_name=fname, mime="text/csv", key="dl_findings2")
 
     st.info("""
-    **How to use this report generator:**
+    **How to use:**
     1. Fill in your company and client details above
     2. Review and edit the auto-generated findings
-    3. Click Generate PDF for a client-ready deliverable
-    4. Click Generate Word Doc to get an editable version you can customize further
-    5. Send the PDF to the building owner/CFO and the Word doc to the facilities manager
+    3. Click Generate HTML Report — opens in any browser
+    4. Use File → Print → Save as PDF for a polished client deliverable
     """)
 
 # ─── Footer ──────────────────────────────────────────────────────────────────────
