@@ -128,40 +128,158 @@ section[data-testid="stSidebar"] * { color: #e6edf3 !important; }
 /* Streamlit override bits */
 div[data-testid="stMetric"] label { color: #c5d0dc !important; }
 
-/* All widget labels white */
-.stSlider label,
-.stSelectbox label,
-.stMultiSelect label,
-.stRadio label,
-.stCheckbox label,
-.stTextInput label,
-.stNumberInput label,
-.stDateInput label,
-.stTextArea label,
+/* ALL text elements white throughout — exclude code/hljs spans */
+*:not(div[data-testid="stCode"] span):not(.stCode span):not(pre span):not(code span):not([class^="hljs"]):not([class*=" hljs"]) {
+    color: #e6edf3;
+    font-weight: 400 !important;
+}
+
+/* ── Code blocks: GitHub Dark syntax theme ───────────────────────────── */
+div[data-testid="stCode"],
+div[data-testid="stCode"] pre,
+div[data-testid="stCode"] code,
+.stCode pre, .stCode code,
+pre, pre code {
+    background-color: #0d1117 !important;
+    color: #c9d1d9 !important;
+    font-weight: 400 !important;
+    font-size: 13px !important;
+    font-family: 'Space Mono', 'Courier New', monospace !important;
+}
+div[data-testid="stCode"] {
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+/* Transparent backgrounds on spans so block bg shows through */
+div[data-testid="stCode"] span,
+pre span { background-color: transparent !important; }
+
+/* ── highlight.js token colours (Python / generic) ──────────────────── */
+/* keywords: import, from, for, if, in, return, def, class, lambda … */
+.hljs-keyword, .hljs-built_in, .hljs-tag { color: #ff7b72 !important; }
+/* strings */
+.hljs-string, .hljs-attr { color: #a5d6ff !important; }
+/* numbers */
+.hljs-number, .hljs-literal { color: #79c0ff !important; }
+/* comments */
+.hljs-comment { color: #8b949e !important; font-style: italic !important; }
+/* function / class names */
+.hljs-title, .hljs-title.function_, .hljs-title.class_ { color: #d2a8ff !important; }
+/* operators, punctuation */
+.hljs-operator, .hljs-punctuation { color: #c9d1d9 !important; }
+/* variables, params */
+.hljs-variable, .hljs-params { color: #ffa657 !important; }
+/* decorators / meta */
+.hljs-meta { color: #e3b341 !important; }
+/* section / name */
+.hljs-name { color: #7ee787 !important; }
+/* type annotations */
+.hljs-type { color: #ffa657 !important; }
+
+/* Widget labels, headers, paragraphs */
+label, p, span, h1, h2, h3, h4, h5, h6,
 div[data-testid="stWidgetLabel"] p,
 div[data-testid="stWidgetLabel"],
-p[data-testid="stWidgetLabel"] {
+p[data-testid="stWidgetLabel"],
+.stSlider label, .stSelectbox label,
+.stMultiSelect label, .stRadio label,
+.stCheckbox label, .stTextInput label,
+.stNumberInput label, .stDateInput label,
+.stTextArea label, .stFileUploader label,
+.stMarkdown p, .stMarkdown span,
+div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stMarkdownContainer"] span {
     color: #e6edf3 !important;
-    font-weight: 500 !important;
 }
 
-/* Slider value label */
-div[data-testid="stSlider"] div[data-testid="stTickBar"],
-div[data-testid="stSlider"] p {
-    color: #e6edf3 !important;
-}
-
-/* Selectbox and text inside widgets */
-.stSelectbox div[data-baseweb="select"] div {
-    color: #e6edf3 !important;
-    background-color: #161b22 !important;
-}
-
-/* Rolling Analysis chart title via Plotly already handled */
-/* Sidebar labels */
+/* Sidebar everything white */
+section[data-testid="stSidebar"] *,
 section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] p {
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] div {
     color: #e6edf3 !important;
+}
+
+/* File uploader text */
+.stFileUploader div, .stFileUploader p,
+.stFileUploader span, .stFileUploader small,
+div[data-testid="stFileUploader"] *,
+div[data-testid="stFileUploaderDropzone"] * {
+    color: #e6edf3 !important;
+}
+
+/* Slider value and tick labels */
+div[data-testid="stSlider"] *,
+div[data-testid="stSlider"] p,
+div[data-testid="stSlider"] span {
+    color: #e6edf3 !important;
+}
+
+/* Selectbox — closed control (dark bg, light text) */
+div[data-baseweb="select"] > div {
+    background-color: #161b22 !important;
+    color: #e6edf3 !important;
+}
+div[data-baseweb="select"] > div * {
+    color: #e6edf3 !important;
+}
+
+/* Selectbox — open dropdown menu (white bg, dark text) */
+div[data-baseweb="menu"],
+div[data-baseweb="menu"] *,
+div[data-baseweb="popover"] div[role="option"],
+div[data-baseweb="popover"] div[role="option"] *,
+div[data-baseweb="popover"] li,
+div[data-baseweb="popover"] li * {
+    color: #0d1117 !important;
+    background-color: #ffffff !important;
+}
+
+/* Hovered / selected option */
+div[data-baseweb="menu"] [aria-selected="true"],
+div[data-baseweb="menu"] [aria-selected="true"] *,
+div[data-baseweb="menu"] li:hover,
+div[data-baseweb="menu"] li:hover * {
+    background-color: #e8f0fe !important;
+    color: #0d1117 !important;
+}
+
+/* Radio buttons */
+div[data-testid="stRadio"] *,
+div[data-testid="stRadio"] label,
+div[data-testid="stRadio"] p {
+    color: #e6edf3 !important;
+}
+
+/* Caption and small text */
+.stCaption, small, caption {
+    color: #c5d0dc !important;
+}
+
+/* Metric labels */
+div[data-testid="stMetric"] label,
+div[data-testid="stMetricLabel"] * {
+    color: #c5d0dc !important;
+}
+
+/* Keep input field text dark for readability on white bg */
+input[type="text"], input[type="date"],
+div[data-baseweb="input"] input,
+.stDateInput input, .stTextInput input,
+.stNumberInput input {
+    color: #0d1117 !important;
+    background-color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Keep date range dark text */
+.stDateInput > div > div > input {
+    color: #0d1117 !important;
+    background: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
 }
 div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #e6edf3 !important; }
 .stTabs [data-baseweb="tab-list"] { background-color: #161b22; border-radius: 8px; }
@@ -227,20 +345,130 @@ div[data-testid="stFileUploader"] {
     font-size: 12px;
 }
 .fault-event-row:last-child { border-bottom: none; }
+
+/* Restore bold where it matters */
+.metric-value,
+.metric-label,
+.section-header,
+.rule-name,
+.severity-high, .severity-medium, .severity-low,
+.stButton > button,
+strong, b,
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700 !important;
+}
+div[data-testid="stMetricValue"] * {
+    font-weight: 700 !important;
+}
+
+/* Expander header — dark background, white text */
+div[data-testid="stExpander"] {
+    background-color: #1c2128 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+    margin-bottom: 6px !important;
+}
+div[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] summary *,
+div[data-testid="stExpander"] summary p,
+div[data-testid="stExpander"] summary span,
+div[data-testid="stExpander"] > div:first-child,
+div[data-testid="stExpander"] > div:first-child * {
+    color: #e6edf3 !important;
+    background-color: transparent !important;
+}
+/* Expander body */
+div[data-testid="stExpander"] > div:last-child {
+    background-color: #161b22 !important;
+    border-top: 1px solid #30363d !important;
+}
+/* Expander chevron icon */
+div[data-testid="stExpander"] svg {
+    fill: #e6edf3 !important;
+    stroke: #e6edf3 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ─── Helpers ────────────────────────────────────────────────────────────────────
+import plotly.graph_objects as _go
+import plotly.io as _pio
+
+# Build a custom dark template so ALL axes/ticks/labels are white by default
+_dark_template = _go.layout.Template()
+_dark_template.layout = _go.Layout(
+    paper_bgcolor="#161b22",
+    plot_bgcolor="#0d1117",
+    font=dict(color="#e6edf3", family="DM Sans", size=13),
+    title_font=dict(color="#e6edf3", size=15, family="DM Sans"),
+    xaxis=dict(
+        gridcolor="#21262d", zerolinecolor="#30363d",
+        tickfont=dict(color="#e6edf3", size=12),
+        title_font=dict(color="#e6edf3", size=13),
+        color="#e6edf3", tickcolor="#e6edf3", linecolor="#30363d",
+    ),
+    yaxis=dict(
+        gridcolor="#21262d", zerolinecolor="#30363d",
+        tickfont=dict(color="#e6edf3", size=12),
+        title_font=dict(color="#e6edf3", size=13),
+        color="#e6edf3", tickcolor="#e6edf3", linecolor="#30363d",
+    ),
+    legend=dict(
+        bgcolor="rgba(0,0,0,0)", bordercolor="#30363d",
+        font=dict(color="#e6edf3", size=13),
+    ),
+    coloraxis=dict(colorbar=dict(
+        tickfont=dict(color="#e6edf3"),
+        title_font=dict(color="#e6edf3"),
+    )),
+)
+_pio.templates["hvac_dark"] = _dark_template
+_pio.templates.default = "hvac_dark"
+
+_AXIS = dict(
+    gridcolor="#21262d", zerolinecolor="#30363d",
+    tickfont=dict(color="#e6edf3", size=12),
+    title_font=dict(color="#e6edf3", size=13),
+    color="#e6edf3", tickcolor="#e6edf3", linecolor="#30363d",
+)
+
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="#161b22",
     plot_bgcolor="#0d1117",
     font=dict(color="#e6edf3", family="DM Sans", size=13),
-    title_font=dict(color="#e6edf3", size=14),
-    xaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
-    yaxis=dict(gridcolor="#21262d", zerolinecolor="#30363d", tickfont=dict(color="#e6edf3"), title_font=dict(color="#e6edf3")),
+    title_font=dict(color="#e6edf3", size=15, family="DM Sans"),
+    xaxis=_AXIS,
+    yaxis=_AXIS,
     margin=dict(l=48, r=24, t=48, b=40),
-    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="#30363d", font=dict(color="#e6edf3", size=13)),
+    legend=dict(
+        bgcolor="rgba(0,0,0,0)", bordercolor="#30363d",
+        font=dict(color="#e6edf3", size=13),
+    ),
+    coloraxis=dict(colorbar=dict(
+        tickfont=dict(color="#e6edf3"),
+        title_font=dict(color="#e6edf3"),
+    )),
 )
+
+def _themed(fig, xaxis_title=None, yaxis_title=None):
+    """Force white axis text on every axis in the figure (covers subplots too)."""
+    kw = dict(
+        color="#e6edf3",
+        tickfont=dict(color="#e6edf3", size=12),
+        title_font=dict(color="#e6edf3", size=13),
+        gridcolor="#21262d",
+        zerolinecolor="#30363d",
+        tickcolor="#e6edf3",
+    )
+    fig.update_xaxes(**kw, **({"title_text": xaxis_title} if xaxis_title else {}))
+    fig.update_yaxes(**kw, **({"title_text": yaxis_title} if yaxis_title else {}))
+    fig.update_layout(
+        font_color="#e6edf3",
+        title_font_color="#e6edf3",
+    )
+    return fig
+
+
 
 COLORS = {
     "blue":   "#00b4d8",
@@ -851,6 +1079,7 @@ with tab1:
             ))
 
         fig.update_layout(**PLOTLY_LAYOUT, title=dict(text="Time Series Overview", font=dict(color="#e6edf3", size=16)), height=420)
+        _themed(fig)
         st.plotly_chart(fig, width='stretch')
 
         # Rolling stats
@@ -872,6 +1101,7 @@ with tab1:
             ),
         ])
         fig2.update_layout(**PLOTLY_LAYOUT, title=f"Rolling Analysis — {roll_col.replace('_',' ').title()}", height=320)
+        _themed(fig2)
         st.plotly_chart(fig2, width='stretch')
 
 
@@ -900,6 +1130,7 @@ with tab2:
                     fillcolor=["rgba(0,180,216,0.4)","rgba(6,214,160,0.4)","rgba(157,78,221,0.4)","rgba(247,201,72,0.4)"][i % 4],
                 ))
             fig.update_layout(**PLOTLY_LAYOUT, title="Stacked Energy Consumption (kW)", height=380)
+            _themed(fig)
             st.plotly_chart(fig, width='stretch')
 
         c1, c2 = st.columns(2)
@@ -912,8 +1143,8 @@ with tab2:
                     marker_color=COLORS["blue"],
                     marker_line_color=COLORS["teal"], marker_line_width=0.5,
                 ))
-                fig.update_layout(**PLOTLY_LAYOUT, title="Avg Load by Hour of Day", height=300,
-                                  xaxis_title="Hour", yaxis_title="kW")
+                fig.update_layout(**PLOTLY_LAYOUT, title="Avg Load by Hour of Day", height=300)
+                _themed(fig, xaxis_title="Hour", yaxis_title="kW")
                 st.plotly_chart(fig, width='stretch')
 
         with c2:
@@ -928,6 +1159,7 @@ with tab2:
                 ))
                 fig.update_layout(**PLOTLY_LAYOUT, title="Avg Load Share", height=300,
                                   showlegend=True)
+                _themed(fig)
                 st.plotly_chart(fig, width='stretch')
 
         # Daily consumption
@@ -938,8 +1170,8 @@ with tab2:
                 x=daily["date"], y=daily["daily_kwh"],
                 marker_color=COLORS["teal"],
             ))
-            fig.update_layout(**PLOTLY_LAYOUT, title="Daily Energy (kWh)", height=280,
-                              xaxis_title="Date", yaxis_title="kWh")
+            fig.update_layout(**PLOTLY_LAYOUT, title="Daily Energy (kWh)", height=280)
+            _themed(fig, xaxis_title="Date", yaxis_title="kWh")
             st.plotly_chart(fig, width='stretch')
 
 
@@ -962,8 +1194,8 @@ with tab3:
                 name=col.replace("_", " ").title(),
                 line=dict(color=pal[i % len(pal)], width=1.5),
             ))
-        fig.update_layout(**PLOTLY_LAYOUT, title="All Temperature Sensors", height=380,
-                          yaxis_title="°F")
+        fig.update_layout(**PLOTLY_LAYOUT, title="All Temperature Sensors", height=380)
+        _themed(fig, yaxis_title="°F")
         st.plotly_chart(fig, width='stretch')
 
         c1, c2 = st.columns(2)
@@ -977,6 +1209,7 @@ with tab3:
             fig.update_layout(**PLOTLY_LAYOUT, title="Temperature Distribution",
                               height=340, showlegend=False,
                               xaxis_tickangle=-30)
+            _themed(fig)
             st.plotly_chart(fig, width='stretch')
 
         with c2:
@@ -994,6 +1227,7 @@ with tab3:
                 ))
                 fig.update_layout(**PLOTLY_LAYOUT, title="Sensor Correlation",
                                   height=340)
+                _themed(fig)
                 st.plotly_chart(fig, width='stretch')
 
         # Supply vs Return DT
@@ -1006,8 +1240,8 @@ with tab3:
                                      name="ΔT (Return − Supply)"))
             fig.add_hline(y=14, line_dash="dash", line_color=COLORS["green"],
                           annotation_text="Design ΔT 14°F")
-            fig.update_layout(**PLOTLY_LAYOUT, title="Supply→Return ΔT", height=280,
-                              yaxis_title="°F")
+            fig.update_layout(**PLOTLY_LAYOUT, title="Supply→Return ΔT", height=280)
+            _themed(fig, yaxis_title="°F")
             st.plotly_chart(fig, width='stretch')
 
 
@@ -1040,8 +1274,8 @@ with tab4:
         ))
         fig.add_hline(y=z_thresh, line_dash="dash", line_color=COLORS["red"],
                       annotation_text=f"Threshold ({z_thresh})")
-        fig.update_layout(**PLOTLY_LAYOUT, title="Anomaly Score Over Time", height=280,
-                          yaxis_title="Z-score")
+        fig.update_layout(**PLOTLY_LAYOUT, title="Anomaly Score Over Time", height=280)
+        _themed(fig, yaxis_title="Z-score")
         st.plotly_chart(fig, width='stretch')
 
         # Per-column anomaly scatter
@@ -1060,7 +1294,8 @@ with tab4:
                                      name="Anomaly"))
             fig.update_layout(**PLOTLY_LAYOUT,
                               title=f"Anomaly Scatter — {sel_col.replace('_',' ').title()}",
-                              height=320, yaxis_title=sel_col)
+                              height=320)
+            _themed(fig, yaxis_title=sel_col)
             st.plotly_chart(fig, width='stretch')
 
         # Table
@@ -1210,6 +1445,7 @@ with tab5:
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"{rule['name']} — Fault Windows",
                                       height=260)
+                    _themed(fig)
                     st.plotly_chart(fig, width='stretch')
 
                     sc1, sc2, sc3 = st.columns(3)
@@ -1289,7 +1525,8 @@ with tab5:
                                   annotation_text=f"Threshold {custom_threshold}")
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"Custom Rule — {custom_name}",
-                                      height=300, yaxis_title=custom_col)
+                                      height=300)
+                    _themed(fig, yaxis_title=custom_col)
                     st.plotly_chart(fig, width='stretch')
                     ev_df = pd.DataFrame(cr["events"]).copy()
                     ev_df["start"] = ev_df["start"].dt.strftime("%Y-%m-%d %H:%M")
@@ -1361,6 +1598,7 @@ with tab5:
                                       opacity=0.13, layer="below", line_width=0)
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"Two-Signal Rule — {ds_name}", height=320)
+                    _themed(fig)
                     st.plotly_chart(fig, width='stretch')
                     ev_df = pd.DataFrame(cr["events"]).copy()
                     ev_df["start"] = ev_df["start"].dt.strftime("%Y-%m-%d %H:%M")
@@ -1435,7 +1673,8 @@ with tab5:
             ))
             fig.update_layout(**PLOTLY_LAYOUT,
                               title="Daily Fault Severity Score",
-                              height=300, xaxis_title="Date", yaxis_title="Score")
+                              height=300)
+            _themed(fig, xaxis_title="Date", yaxis_title="Score")
             st.plotly_chart(fig, width='stretch')
 
             if not heat_df.empty:
@@ -1498,8 +1737,8 @@ with tab5:
                     )
             fig.update_layout(**PLOTLY_LAYOUT,
                               title="All Fault Windows — Timeline Overlay",
-                              height=360,
-                              yaxis_title="Total kW" if "total_kw" in df.columns else "")
+                              height=360)
+            _themed(fig, yaxis_title="Total kW" if "total_kw" in df.columns else "")
             st.plotly_chart(fig, width='stretch')
 
             summary_data = []
@@ -1531,8 +1770,8 @@ with tab5:
                 **PLOTLY_LAYOUT,
                 title="Total Fault Hours by Rule",
                 height=max(280, 40 * len(summary_df) + 80),
-                xaxis_title="Hours",
                 )
+            _themed(fig_bar, xaxis_title="Hours")
             fig_bar.update_layout(margin=dict(l=220, r=60, t=48, b=40))
             st.plotly_chart(fig_bar, width='stretch')
 
@@ -1706,7 +1945,8 @@ with tab6:
                         pass
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"{fc_target.replace('_',' ').title()} — {fc_horizon}hr Forecast",
-                                      height=380, yaxis_title="kW")
+                                      height=380)
+                    _themed(fig, yaxis_title="kW")
                     st.plotly_chart(fig, width='stretch')
 
                     # Forecast table
@@ -1838,6 +2078,7 @@ with tab6:
                 fig.update_layout(**PLOTLY_LAYOUT,
                                   title="Isolation Forest — Anomaly Scores & Early Warnings",
                                   height=500)
+                _themed(fig)
                 fig.update_yaxes(title_text=primary, row=1, col=1,
                                  gridcolor="#21262d", zerolinecolor="#30363d")
                 fig.update_yaxes(title_text="Score", row=2, col=1,
@@ -1859,8 +2100,8 @@ with tab6:
                     orientation="h",
                     marker_color=COLORS["teal"],
                 ))
-                fig2.update_layout(**PLOTLY_LAYOUT, height=280, title="Feature Influence on Anomaly Score",
-                                   xaxis_title="|Correlation with Score|")
+                fig2.update_layout(**PLOTLY_LAYOUT, height=280, title="Feature Influence on Anomaly Score")
+                _themed(fig2, xaxis_title="|Correlation with Score|")
                 st.plotly_chart(fig2, width='stretch')
 
                 st.download_button(
@@ -2092,8 +2333,9 @@ with tab6:
                           annotation_text="Warning (50)")
             fig.update_layout(**PLOTLY_LAYOUT,
                               title=f"Chiller Health Proxy — {window_h}hr Rolling",
-                              height=300, yaxis_title="Health Score",
+                              height=300,
                               yaxis_range=[0, 105])
+            _themed(fig, yaxis_title="Health Score")
             st.plotly_chart(fig, width='stretch')
 
     # ════════════════════════════════════════════════════════════════════════════
@@ -2218,9 +2460,8 @@ with tab6:
                     **PLOTLY_LAYOUT,
                     title=f"Setpoint Sweep: {so_setpoint_col.replace('_',' ').title()} → {so_target.replace('_',' ').title()}",
                     height=360,
-                    xaxis_title=so_setpoint_col.replace("_", " ").title(),
-                    yaxis_title=f"Predicted {so_target} (kW)",
                 )
+                _themed(fig, xaxis_title=so_setpoint_col.replace("_", " ").title(), yaxis_title=f"Predicted {so_target} (kW)")
                 st.plotly_chart(fig, width='stretch')
 
                 # Recommendation box
@@ -2253,8 +2494,8 @@ with tab6:
                     ))
                     fig2.update_layout(**PLOTLY_LAYOUT,
                                        title="Ridge Coefficients (positive = raises energy use)",
-                                       height=320,
-                                       xaxis_title="Coefficient (scaled units)")
+                                       height=320)
+                    _themed(fig2, xaxis_title="Coefficient (scaled units)")
                     st.plotly_chart(fig2, width='stretch')
                     st.dataframe(coef_df, width='stretch', hide_index=True)
                     st.caption(
@@ -2266,23 +2507,107 @@ with tab6:
 # ══════════════════════════════════════════════════════════════════════════════════
 # TAB 7 — Equipment Fault Rules
 # ══════════════════════════════════════════════════════════════════════════════════
+# ── Equipment tab helpers ────────────────────────────────────────────────────
+def equip_metric(label, value, status="default"):
+    color = {"danger": "#ff6b6b", "warning": "#f7c948", "good": "#2ecc71", "default": "#00b4d8"}.get(status, "#00b4d8")
+    st.markdown(f"""<div style="background:#161b22;border:1px solid #30363d;border-top:3px solid {color};
+    border-radius:10px;padding:16px 20px;margin-bottom:10px">
+    <div style="font-family:Space Mono,monospace;font-size:10px;letter-spacing:2px;color:#c5d0dc;text-transform:uppercase">{label}</div>
+    <div style="font-family:Space Mono,monospace;font-size:24px;font-weight:700;color:#e6edf3">{value}</div>
+    </div>""", unsafe_allow_html=True)
+
+def _run_equip_rules(rules, df):
+    """Run a list of equipment rules and render expanders. Returns triggered count."""
+    sev_colors = {"HIGH": "#ff6b6b", "MEDIUM": "#f7c948", "LOW": "#2ecc71"}
+    triggered = 0
+    for rule in rules:
+        try:
+            mask = rule["check"](df)
+            if mask is None:
+                icon, text, count = "⚫", "Missing data", 0
+            else:
+                count = int(mask.fillna(False).sum())
+                triggered += 1 if count > 0 else 0
+                icon  = "🔴" if count > 0 and rule["severity"] == "HIGH" else ("🟡" if count > 0 else "🟢")
+                text  = f"{count} fault readings" if count > 0 else "No faults"
+        except Exception:
+            icon, text, count = "⚫", "Could not evaluate", 0
+
+        with st.expander(f"{icon} **{rule['name']}** — {text}",
+                         expanded=(count > 0 and rule["severity"] == "HIGH")):
+            sc = sev_colors.get(rule["severity"], "#00b4d8")
+            st.markdown(
+                f"<code style='background:rgba(0,180,216,0.1);color:#00b4d8;"
+                f"padding:3px 8px;border-radius:4px;font-size:11px'>{rule['expr']}</code>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(rule["description"])
+            if count > 0:
+                st.markdown(f"**💡 Recommended action:** {rule['action']}")
+            st.markdown(
+                f"<span style='color:{sc};font-family:Space Mono,monospace;"
+                f"font-size:11px;font-weight:700'>{rule['severity']}</span>",
+                unsafe_allow_html=True,
+            )
+    return triggered
+
+# ══════════════════════════════════════════════════════════════════════════════════
+# TAB 7 — Equipment Fault Rules
+# ══════════════════════════════════════════════════════════════════════════════════
 with tab7:
     st.markdown("## 🏭 Equipment Fault Rules")
-    st.caption("Fault detection rules for VAV boxes, boilers, cooling towers, heat exchangers, and RTUs.")
+    st.caption("Fault detection rules for Chillers, VAV boxes, boilers, cooling towers, heat exchangers, and RTUs.")
 
-    equip_tab1, equip_tab2, equip_tab3, equip_tab4, equip_tab5 = st.tabs([
-        "🌀 VAV Boxes", "🔥 Boilers", "🌊 Cooling Towers", "♻️ Heat Exchangers", "🏠 RTUs"
+    equip_tab0, equip_tab1, equip_tab2, equip_tab3, equip_tab4, equip_tab5 = st.tabs([
+        "❄️ Chillers", "🌀 VAV Boxes", "🔥 Boilers", "🌊 Cooling Towers", "♻️ Heat Exchangers", "🏠 RTUs"
     ])
 
-    EQUIP_COLORS = {"red": "#ff6b6b", "amber": "#f7c948", "green": "#2ecc71", "blue": "#00b4d8", "teal": "#06d6a0"}
+    # ── Chillers ─────────────────────────────────────────────────────────────────
+    with equip_tab0:
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Chiller Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("Chiller faults manifest as temperature anomalies, efficiency degradation, and power draw issues.")
 
-    def equip_metric(label, value, status="default"):
-        color = {"danger": "#ff6b6b", "warning": "#f7c948", "good": "#2ecc71", "default": "#00b4d8"}.get(status, "#00b4d8")
-        st.markdown(f"""<div style="background:#161b22;border:1px solid #30363d;border-top:3px solid {color};
-        border-radius:10px;padding:16px 20px;margin-bottom:10px">
-        <div style="font-family:Space Mono,monospace;font-size:10px;letter-spacing:2px;color:#c5d0dc;text-transform:uppercase">{label}</div>
-        <div style="font-family:Space Mono,monospace;font-size:24px;font-weight:700;color:#e6edf3">{value}</div>
-        </div>""", unsafe_allow_html=True)
+        CHILLER_RULES = [
+            {"name": "Low ΔT Syndrome", "severity": "HIGH",
+             "description": "Return–supply ΔT below 10°F — poor heat transfer, balancing valve issues, or excessive bypass flow.",
+             "expr": "(return_air_temp − supply_air_temp) < 10°F for ≥2 hrs",
+             "check": lambda d: (d["return_air_temp"] - d["supply_air_temp"]) < 10 if all(c in d.columns for c in ["return_air_temp","supply_air_temp"]) else None,
+             "action": "Balance coil flow, check bypass valve, verify pump operation."},
+            {"name": "Inverted ΔT", "severity": "HIGH",
+             "description": "Supply air temperature exceeds return air temperature — sensor swap or severe reverse flow.",
+             "expr": "supply_air_temp > return_air_temp for ≥30 min",
+             "check": lambda d: d["supply_air_temp"] > d["return_air_temp"] if all(c in d.columns for c in ["supply_air_temp","return_air_temp"]) else None,
+             "action": "Verify sensor wiring and orientation. Check for reverse flow conditions."},
+            {"name": "High Condenser Temp", "severity": "HIGH",
+             "description": "Condenser temp above 100°F — check cooling tower, condenser fouling, or refrigerant charge.",
+             "expr": "condenser_temp > 100°F for ≥1 hr",
+             "check": lambda d: d["condenser_temp"] > 100 if "condenser_temp" in d.columns else None,
+             "action": "Inspect cooling tower, condenser tubes, and refrigerant charge."},
+            {"name": "Chilled Water Supply Temp High", "severity": "MEDIUM",
+             "description": "Chilled water supply above 50°F — chiller struggling, setpoint drift, or low refrigerant.",
+             "expr": "chilled_water_temp > 50°F for ≥1 hr",
+             "check": lambda d: d["chilled_water_temp"] > 50 if "chilled_water_temp" in d.columns else None,
+             "action": "Verify chiller setpoint, check refrigerant levels and chiller log."},
+            {"name": "High Chiller Approach Temp", "severity": "MEDIUM",
+             "description": "Gap between supply air and chilled water > 18°F — coil fouling or reduced flow.",
+             "expr": "(supply_air_temp − chilled_water_temp) > 18°F for ≥2 hrs",
+             "check": lambda d: (d["supply_air_temp"] - d["chilled_water_temp"]) > 18 if all(c in d.columns for c in ["supply_air_temp","chilled_water_temp"]) else None,
+             "action": "Clean cooling coil, check flow balancing, inspect heat exchanger."},
+            {"name": "Chiller Overload", "severity": "HIGH",
+             "description": "Chiller power draw above 95th percentile — risk of trip or degraded efficiency.",
+             "expr": "chiller_kw > P95 for ≥30 min",
+             "check": lambda d: d["chiller_kw"] > d["chiller_kw"].quantile(0.95) if "chiller_kw" in d.columns else None,
+             "action": "Review chiller staging, check for load spike, inspect compressor."},
+            {"name": "Chiller Low-Load Operation", "severity": "LOW",
+             "description": "Chiller below 20th percentile — inefficient part-load operation, consider staging off.",
+             "expr": "chiller_kw < P20 for ≥2 hrs",
+             "check": lambda d: d["chiller_kw"] < d["chiller_kw"].quantile(0.20) if "chiller_kw" in d.columns else None,
+             "action": "Evaluate chiller staging strategy and part-load efficiency curve."},
+        ]
+        n = _run_equip_rules(CHILLER_RULES, df)
+        c1, c2 = st.columns(2)
+        c1.metric("Chiller Rules Triggered", n)
+        c2.metric("Total Chiller Rules", len(CHILLER_RULES))
 
     # ── VAV Boxes ────────────────────────────────────────────────────────────────
     with equip_tab1:
@@ -2676,6 +3001,7 @@ print(df_live)
             latest = df.tail(1).T
             latest.columns = ["Latest Value"]
             latest.index.name = "Signal"
+            latest["Latest Value"] = latest["Latest Value"].astype(str)
             st.dataframe(latest, width='stretch')
 
         st.markdown("#### Manual CSV Import")
