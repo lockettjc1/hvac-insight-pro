@@ -127,6 +127,42 @@ section[data-testid="stSidebar"] * { color: #e6edf3 !important; }
 
 /* Streamlit override bits */
 div[data-testid="stMetric"] label { color: #c5d0dc !important; }
+
+/* All widget labels white */
+.stSlider label,
+.stSelectbox label,
+.stMultiSelect label,
+.stRadio label,
+.stCheckbox label,
+.stTextInput label,
+.stNumberInput label,
+.stDateInput label,
+.stTextArea label,
+div[data-testid="stWidgetLabel"] p,
+div[data-testid="stWidgetLabel"],
+p[data-testid="stWidgetLabel"] {
+    color: #e6edf3 !important;
+    font-weight: 500 !important;
+}
+
+/* Slider value label */
+div[data-testid="stSlider"] div[data-testid="stTickBar"],
+div[data-testid="stSlider"] p {
+    color: #e6edf3 !important;
+}
+
+/* Selectbox and text inside widgets */
+.stSelectbox div[data-baseweb="select"] div {
+    color: #e6edf3 !important;
+    background-color: #161b22 !important;
+}
+
+/* Rolling Analysis chart title via Plotly already handled */
+/* Sidebar labels */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] p {
+    color: #e6edf3 !important;
+}
 div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #e6edf3 !important; }
 .stTabs [data-baseweb="tab-list"] { background-color: #161b22; border-radius: 8px; }
 .stTabs [data-baseweb="tab"] { color: #c5d0dc; }
@@ -748,7 +784,7 @@ df["is_anomaly"] = anom_df["is_anomaly"].values
 
 # ─── Header ──────────────────────────────────────────────────────────────────────
 st.markdown("# ❄️ HVAC Insight Pro")
-st.markdown(f"<span style='color:#1a2f4a;font-family:Space Mono,monospace;font-size:12px'>"
+st.markdown(f"<span style='color:#e6edf3;font-family:Space Mono,monospace;font-size:12px'>"
             f"Analysing {len(df):,} records · "
             f"{df['timestamp'].min().strftime('%b %d %Y')} → {df['timestamp'].max().strftime('%b %d %Y')}"
             f"</span>", unsafe_allow_html=True)
@@ -814,8 +850,8 @@ with tab1:
                 marker=dict(color=COLORS["red"], size=6, symbol="x"),
             ))
 
-        fig.update_layout(**PLOTLY_LAYOUT, title="Time Series Overview", height=420)
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(**PLOTLY_LAYOUT, title=dict(text="Time Series Overview", font=dict(color="#e6edf3", size=16)), height=420)
+        st.plotly_chart(fig, width='stretch')
 
         # Rolling stats
         roll_col = st.selectbox("Rolling window for", plot_cols, key="roll_col")
@@ -836,7 +872,7 @@ with tab1:
             ),
         ])
         fig2.update_layout(**PLOTLY_LAYOUT, title=f"Rolling Analysis — {roll_col.replace('_',' ').title()}", height=320)
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 
 # ══════════════════════════════════════════════════════════════════════════════════
@@ -864,7 +900,7 @@ with tab2:
                     fillcolor=["rgba(0,180,216,0.4)","rgba(6,214,160,0.4)","rgba(157,78,221,0.4)","rgba(247,201,72,0.4)"][i % 4],
                 ))
             fig.update_layout(**PLOTLY_LAYOUT, title="Stacked Energy Consumption (kW)", height=380)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         c1, c2 = st.columns(2)
         with c1:
@@ -878,7 +914,7 @@ with tab2:
                 ))
                 fig.update_layout(**PLOTLY_LAYOUT, title="Avg Load by Hour of Day", height=300,
                                   xaxis_title="Hour", yaxis_title="kW")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         with c2:
             # Pie breakdown (mean)
@@ -892,7 +928,7 @@ with tab2:
                 ))
                 fig.update_layout(**PLOTLY_LAYOUT, title="Avg Load Share", height=300,
                                   showlegend=True)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         # Daily consumption
         if "total_kw" in df.columns:
@@ -904,7 +940,7 @@ with tab2:
             ))
             fig.update_layout(**PLOTLY_LAYOUT, title="Daily Energy (kWh)", height=280,
                               xaxis_title="Date", yaxis_title="kWh")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 # ══════════════════════════════════════════════════════════════════════════════════
@@ -928,7 +964,7 @@ with tab3:
             ))
         fig.update_layout(**PLOTLY_LAYOUT, title="All Temperature Sensors", height=380,
                           yaxis_title="°F")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         c1, c2 = st.columns(2)
         with c1:
@@ -941,7 +977,7 @@ with tab3:
             fig.update_layout(**PLOTLY_LAYOUT, title="Temperature Distribution",
                               height=340, showlegend=False,
                               xaxis_tickangle=-30)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         with c2:
             # Correlation heatmap
@@ -958,7 +994,7 @@ with tab3:
                 ))
                 fig.update_layout(**PLOTLY_LAYOUT, title="Sensor Correlation",
                                   height=340)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         # Supply vs Return DT
         if "supply_air_temp" in df.columns and "return_air_temp" in df.columns:
@@ -972,7 +1008,7 @@ with tab3:
                           annotation_text="Design ΔT 14°F")
             fig.update_layout(**PLOTLY_LAYOUT, title="Supply→Return ΔT", height=280,
                               yaxis_title="°F")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 # ══════════════════════════════════════════════════════════════════════════════════
@@ -1006,7 +1042,7 @@ with tab4:
                       annotation_text=f"Threshold ({z_thresh})")
         fig.update_layout(**PLOTLY_LAYOUT, title="Anomaly Score Over Time", height=280,
                           yaxis_title="Z-score")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         # Per-column anomaly scatter
         sel_col = st.selectbox("Inspect column", anomaly_cols, key="anom_col")
@@ -1025,7 +1061,7 @@ with tab4:
             fig.update_layout(**PLOTLY_LAYOUT,
                               title=f"Anomaly Scatter — {sel_col.replace('_',' ').title()}",
                               height=320, yaxis_title=sel_col)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         # Table
         if not anom_rows.empty:
@@ -1033,7 +1069,7 @@ with tab4:
             display_cols = ["timestamp"] + [c for c in anomaly_cols if c in anom_rows.columns] + ["anomaly_score"]
             st.dataframe(
                 anom_rows[display_cols].sort_values("anomaly_score", ascending=False).head(200),
-                use_container_width=True, height=320,
+                width='stretch', height=320,
             )
             csv_out = anom_rows[display_cols].to_csv(index=False)
             st.download_button("⬇ Export Anomaly Log CSV", data=csv_out,
@@ -1174,7 +1210,7 @@ with tab5:
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"{rule['name']} — Fault Windows",
                                       height=260)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
                     sc1, sc2, sc3 = st.columns(3)
                     durations = [ev["duration_hrs"] for ev in events]
@@ -1186,7 +1222,7 @@ with tab5:
                     ev_df["start"] = ev_df["start"].dt.strftime("%Y-%m-%d %H:%M")
                     ev_df["end"]   = ev_df["end"].dt.strftime("%Y-%m-%d %H:%M")
                     ev_df.columns  = ["Start", "End", "Duration (hrs)", "Peak Value", "Signal"]
-                    st.dataframe(ev_df, use_container_width=True, hide_index=True, height=220)
+                    st.dataframe(ev_df, width='stretch', hide_index=True, height=220)
 
     # ══════════════════════════════════════════════════════════════════════════════
     # FTAB 2 — Custom Rule Builder
@@ -1254,12 +1290,12 @@ with tab5:
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"Custom Rule — {custom_name}",
                                       height=300, yaxis_title=custom_col)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                     ev_df = pd.DataFrame(cr["events"]).copy()
                     ev_df["start"] = ev_df["start"].dt.strftime("%Y-%m-%d %H:%M")
                     ev_df["end"]   = ev_df["end"].dt.strftime("%Y-%m-%d %H:%M")
                     ev_df.columns  = ["Start", "End", "Duration (hrs)", "Peak Value", "Signal"]
-                    st.dataframe(ev_df, use_container_width=True, hide_index=True)
+                    st.dataframe(ev_df, width='stretch', hide_index=True)
                     st.download_button("⬇ Export Events CSV",
                                        data=ev_df.to_csv(index=False),
                                        file_name="custom_fault_events.csv", mime="text/csv")
@@ -1325,12 +1361,12 @@ with tab5:
                                       opacity=0.13, layer="below", line_width=0)
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"Two-Signal Rule — {ds_name}", height=320)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                     ev_df = pd.DataFrame(cr["events"]).copy()
                     ev_df["start"] = ev_df["start"].dt.strftime("%Y-%m-%d %H:%M")
                     ev_df["end"]   = ev_df["end"].dt.strftime("%Y-%m-%d %H:%M")
                     ev_df.columns  = ["Start", "End", "Duration (hrs)", "Peak |ΔSignal|", "Signals"]
-                    st.dataframe(ev_df, use_container_width=True, hide_index=True)
+                    st.dataframe(ev_df, width='stretch', hide_index=True)
                     st.download_button("⬇ Export Events CSV",
                                        data=ev_df.to_csv(index=False),
                                        file_name="dual_signal_fault_events.csv", mime="text/csv")
@@ -1400,7 +1436,7 @@ with tab5:
             fig.update_layout(**PLOTLY_LAYOUT,
                               title="Daily Fault Severity Score",
                               height=300, xaxis_title="Date", yaxis_title="Score")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
             if not heat_df.empty:
                 st.markdown('<div class="section-header">Fault Hours per Rule per Day</div>',
@@ -1421,7 +1457,7 @@ with tab5:
                 )
                 fig2.update_xaxes(tickangle=-45, tickfont=dict(size=9))
                 fig2.update_yaxes(tickfont=dict(size=10))
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width='stretch')
 
             st.markdown('<div class="section-header">Top 10 Worst Fault Days</div>',
                         unsafe_allow_html=True)
@@ -1429,7 +1465,7 @@ with tab5:
             worst["date"] = worst["date"].dt.strftime("%Y-%m-%d (%A)")
             worst["score"] = worst["score"].round(1)
             worst.columns = ["Date", "Severity Score"]
-            st.dataframe(worst, use_container_width=True, hide_index=True)
+            st.dataframe(worst, width='stretch', hide_index=True)
 
     # ══════════════════════════════════════════════════════════════════════════════
     # FTAB 4 — Fault Summary & Export
@@ -1464,7 +1500,7 @@ with tab5:
                               title="All Fault Windows — Timeline Overlay",
                               height=360,
                               yaxis_title="Total kW" if "total_kw" in df.columns else "")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
             summary_data = []
             for rule in triggered_rules:
@@ -1498,7 +1534,7 @@ with tab5:
                 xaxis_title="Hours",
                 )
             fig_bar.update_layout(margin=dict(l=220, r=60, t=48, b=40))
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.plotly_chart(fig_bar, width='stretch')
 
             st.markdown('<div class="section-header">Complete Fault Event Log</div>',
                         unsafe_allow_html=True)
@@ -1518,7 +1554,7 @@ with tab5:
                     })
             if all_events:
                 export_df = pd.DataFrame(all_events).sort_values(["Severity", "Start"])
-                st.dataframe(export_df, use_container_width=True,
+                st.dataframe(export_df, width='stretch',
                              hide_index=True, height=320)
                 st.download_button(
                     "⬇ Export All Fault Events CSV",
@@ -1655,15 +1691,23 @@ with tab6:
                         line=dict(color="rgba(0,0,0,0)"),
                         name="95% CI",
                     ))
-                    fig.add_vline(
-                        x=str(series.index[-1]),
-                        line_dash="dash", line_color="#30363d",
-                        annotation_text="Now", annotation_font_color="#8b949e",
-                    )
+                    try:
+                        vline_x = series.index[-1]
+                        if hasattr(vline_x, 'timestamp'):
+                            vline_x = vline_x.isoformat()
+                        else:
+                            vline_x = str(vline_x)
+                        fig.add_vline(
+                            x=vline_x,
+                            line_dash="dash", line_color="#30363d",
+                            annotation_text="Now", annotation_font_color="#c5d0dc",
+                        )
+                    except Exception:
+                        pass
                     fig.update_layout(**PLOTLY_LAYOUT,
                                       title=f"{fc_target.replace('_',' ').title()} — {fc_horizon}hr Forecast",
                                       height=380, yaxis_title="kW")
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
                     # Forecast table
                     fc_df = pd.DataFrame({
@@ -1673,7 +1717,7 @@ with tab6:
                         "Upper CI":    ci_upper.values.round(1),
                     })
                     with st.expander("View forecast table"):
-                        st.dataframe(fc_df, use_container_width=True, hide_index=True)
+                        st.dataframe(fc_df, width='stretch', hide_index=True)
                     st.download_button("⬇ Export Forecast CSV",
                                        data=fc_df.to_csv(index=False),
                                        file_name="hvac_forecast.csv", mime="text/csv")
@@ -1798,7 +1842,7 @@ with tab6:
                                  gridcolor="#21262d", zerolinecolor="#30363d")
                 fig.update_yaxes(title_text="Score", row=2, col=1,
                                  gridcolor="#21262d", zerolinecolor="#30363d")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 # Feature importance proxy: mean score contribution
                 st.markdown('<div class="section-header">Feature Influence</div>', unsafe_allow_html=True)
@@ -1817,7 +1861,7 @@ with tab6:
                 ))
                 fig2.update_layout(**PLOTLY_LAYOUT, height=280, title="Feature Influence on Anomaly Score",
                                    xaxis_title="|Correlation with Score|")
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width='stretch')
 
                 st.download_button(
                     "⬇ Export Flagged Points CSV",
@@ -2009,7 +2053,7 @@ with tab6:
                 ))
                 fig.update_layout(paper_bgcolor="#161b22", font_color="#8b949e",
                                   height=220, margin=dict(l=20, r=20, t=40, b=10))
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         # Breakdown tables
         for asset, info in scores_summary.items():
@@ -2018,7 +2062,7 @@ with tab6:
             with st.expander(f"📋 {asset} — Indicator Breakdown"):
                 bk = pd.DataFrame(info["breakdown"])
                 # Colour the Score column
-                st.dataframe(bk, use_container_width=True, hide_index=True)
+                st.dataframe(bk, width='stretch', hide_index=True)
                 st.caption(
                     "**Score (0–1)**: raw indicator value before weighting.  "
                     "**Contribution**: Score × Weight × 100 — sums to the asset total."
@@ -2050,7 +2094,7 @@ with tab6:
                               title=f"Chiller Health Proxy — {window_h}hr Rolling",
                               height=300, yaxis_title="Health Score",
                               yaxis_range=[0, 105])
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     # ════════════════════════════════════════════════════════════════════════════
     # ML-TAB 4 · Setpoint Optimiser (Ridge Regression)
@@ -2177,7 +2221,7 @@ with tab6:
                     xaxis_title=so_setpoint_col.replace("_", " ").title(),
                     yaxis_title=f"Predicted {so_target} (kW)",
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 # Recommendation box
                 direction = "↑ increase" if best_sp > current_sp else "↓ decrease"
@@ -2211,8 +2255,8 @@ with tab6:
                                        title="Ridge Coefficients (positive = raises energy use)",
                                        height=320,
                                        xaxis_title="Coefficient (scaled units)")
-                    st.plotly_chart(fig2, use_container_width=True)
-                    st.dataframe(coef_df, use_container_width=True, hide_index=True)
+                    st.plotly_chart(fig2, width='stretch')
+                    st.dataframe(coef_df, width='stretch', hide_index=True)
                     st.caption(
                         "Coefficients are in **standardised units** (after scaling), so magnitude "
                         "is comparable across features. Positive = raises predicted kW; Negative = reduces it."
@@ -2242,7 +2286,7 @@ with tab7:
 
     # ── VAV Boxes ────────────────────────────────────────────────────────────────
     with equip_tab1:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>VAV Box Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>VAV Box Fault Detection</div>", unsafe_allow_html=True)
         st.markdown("VAV (Variable Air Volume) boxes control airflow to individual zones. Common faults include stuck dampers, failed actuators, and sensor drift.")
 
         vav_cols = [c for c in numeric_cols if any(k in c.lower() for k in ["cfm", "damper", "vav", "zone", "supply"])]
@@ -2306,7 +2350,7 @@ with tab7:
 
     # ── Boilers ──────────────────────────────────────────────────────────────────
     with equip_tab2:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Boiler Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Boiler Fault Detection</div>", unsafe_allow_html=True)
         st.markdown("Boiler faults often manifest as supply/return temperature anomalies, cycling issues, and efficiency degradation.")
 
         st.info("💡 Boiler analysis uses supply/return temperature data. For dedicated boiler sensors, upload a CSV with columns: , , , .")
@@ -2359,7 +2403,7 @@ with tab7:
 
     # ── Cooling Towers ───────────────────────────────────────────────────────────
     with equip_tab3:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Cooling Tower Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Cooling Tower Fault Detection</div>", unsafe_allow_html=True)
         st.markdown("Cooling tower performance directly affects chiller efficiency. Key indicators are condenser water temperature, approach temperature, and fan energy.")
 
         st.info("💡 Upload a CSV with , , and  for full cooling tower analysis.")
@@ -2417,7 +2461,7 @@ with tab7:
 
     # ── Heat Exchangers ──────────────────────────────────────────────────────────
     with equip_tab4:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Heat Exchanger Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Heat Exchanger Fault Detection</div>", unsafe_allow_html=True)
         st.markdown("Heat exchanger faults are typically caused by fouling, scaling, or flow imbalance — all showing up as reduced ΔT or increased approach temperature.")
 
         HX_RULES = [
@@ -2463,7 +2507,7 @@ with tab7:
 
     # ── RTUs ─────────────────────────────────────────────────────────────────────
     with equip_tab5:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>RTU (Rooftop Unit) Fault Detection</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>RTU (Rooftop Unit) Fault Detection</div>", unsafe_allow_html=True)
         st.markdown("RTUs are self-contained units combining heating, cooling, and ventilation. Common faults include refrigerant issues, economizer failures, and heat exchanger problems.")
 
         RTU_RULES = [
@@ -2537,7 +2581,7 @@ with tab8:
     ])
 
     with bacnet_tab1:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>BACnet Connection Settings</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>BACnet Connection Settings</div>", unsafe_allow_html=True)
 
         bc1, bc2 = st.columns(2)
         with bc1:
@@ -2560,7 +2604,7 @@ with tab8:
             "Enabled":        [True,               True,               True,                  True,              True,                True,          True,            True],
         })
 
-        edited_points = st.data_editor(default_points, use_container_width=True, num_rows="dynamic")
+        edited_points = st.data_editor(default_points, width='stretch', num_rows="dynamic")
 
         if st.button("💾 Save Point Configuration", key="save_points"):
             st.success(f"✓ Saved {len(edited_points)} point mappings.")
@@ -2607,7 +2651,7 @@ print(df_live)
 """, language="python")
 
     with bacnet_tab2:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Live Data Polling</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Live Data Polling</div>", unsafe_allow_html=True)
 
         col_a, col_b, col_c = st.columns(3)
         col_a.metric("Connection Status", "⚫ Offline")
@@ -2632,7 +2676,7 @@ print(df_live)
             latest = df.tail(1).T
             latest.columns = ["Latest Value"]
             latest.index.name = "Signal"
-            st.dataframe(latest, use_container_width=True)
+            st.dataframe(latest, width='stretch')
 
         st.markdown("#### Manual CSV Import")
         st.caption("Already have a BACnet trend log exported as CSV? Upload it here and all tabs will update.")
@@ -2641,12 +2685,12 @@ print(df_live)
             try:
                 live_df = pd.read_csv(live_upload)
                 st.success(f"✓ Loaded {len(live_df):,} records from trend log.")
-                st.dataframe(live_df.head(10), use_container_width=True)
+                st.dataframe(live_df.head(10), width='stretch')
             except Exception as e:
                 st.error(f"Error reading file: {e}")
 
     with bacnet_tab3:
-        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>BACnet Point Discovery</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>BACnet Point Discovery</div>", unsafe_allow_html=True)
         st.markdown("When connected to a live BACnet device, this tab automatically discovers all available points.")
 
         st.code("""
@@ -2671,7 +2715,7 @@ for point in all_points:
             "Typical Units": ["°F","°F","%","°F","kW","°F","%","°F","%","°F"],
             "BACnet Object": ["AI:1","AI:2","AO:1","AI:3","AI:10","AI:4","AO:2","AI:5","AO:3","AI:6"],
         })
-        st.dataframe(naming_df, use_container_width=True, hide_index=True)
+        st.dataframe(naming_df, width='stretch', hide_index=True)
 
         st.markdown("#### Supported BACnet Protocols")
         proto_df = pd.DataFrame({
@@ -2680,7 +2724,7 @@ for point in all_points:
             "BAC0 Support": ["✅ Full support","✅ With USB-RS485 adapter","🔄 Partial (BAC0 v22+)"],
             "Typical Devices": ["Controllers, routers, gateways","VAV controllers, terminal units","Modern cloud-connected BAS"],
         })
-        st.dataframe(proto_df, use_container_width=True, hide_index=True)
+        st.dataframe(proto_df, width='stretch', hide_index=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════════
@@ -2694,7 +2738,7 @@ with tab9:
     st.caption("Auto-generate a professional client report from your dashboard analysis.")
 
     # ── Report Settings ──────────────────────────────────────────────────────────
-    st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Report Settings</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Report Settings</div>", unsafe_allow_html=True)
 
     r1, r2 = st.columns(2)
     with r1:
@@ -2803,12 +2847,12 @@ with tab9:
 
     # ── Generate HTML Report ─────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#00b4d8;border-bottom:1px solid #21262d;padding-bottom:8px;margin-bottom:16px'>Generate Report</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-family:Space Mono,monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5bc8e8;border-bottom:1px solid #2a5a8a;padding-bottom:8px;margin-bottom:16px'>Generate Report</div>", unsafe_allow_html=True)
 
     g1, g2 = st.columns(2)
 
     with g1:
-        if st.button("📄 Generate HTML Report", key="gen_html", use_container_width=True):
+        if st.button("📄 Generate HTML Report", key="gen_html", width='stretch'):
             findings_html = ""
             for i, f in enumerate(edited_findings):
                 sev_color = "#c0392b" if f["severity"]=="HIGH" else "#e07b00" if f["severity"]=="MEDIUM" else "#1a7a4a"
@@ -2892,7 +2936,7 @@ with tab9:
             st.success("✅ Report ready! Open in any browser and use File → Print → Save as PDF for a polished PDF.")
 
     with g2:
-        if st.button("📊 Export Findings CSV", key="gen_csv2", use_container_width=True):
+        if st.button("📊 Export Findings CSV", key="gen_csv2", width='stretch'):
             rows = []
             for f in edited_findings:
                 rows.append({
