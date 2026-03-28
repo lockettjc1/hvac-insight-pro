@@ -264,22 +264,37 @@ div[data-testid="stMetricLabel"] * {
     color: #c5d0dc !important;
 }
 
-/* Keep input field text dark for readability on white bg */
-input[type="text"], input[type="date"],
+/* ── All inputs, textareas, number inputs — dark bg, white text ── */
+input[type="text"], input[type="date"], input[type="number"],
 div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
 .stDateInput input, .stTextInput input,
-.stNumberInput input {
-    color: #0d1117 !important;
-    background-color: #ffffff !important;
-    font-weight: 600 !important;
+.stNumberInput input, .stTextArea textarea,
+textarea {
+    color: #e6edf3 !important;
+    background-color: #1c2128 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 6px !important;
+    font-weight: 400 !important;
+    caret-color: #00b4d8 !important;
+}
+/* Placeholder text — dim but readable */
+input::placeholder, textarea::placeholder {
+    color: #4a5f72 !important;
+    opacity: 1 !important;
+}
+input:focus, textarea:focus {
+    border-color: #00b4d8 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(0,180,216,0.2) !important;
 }
 
 /* Keep date range dark text */
 .stDateInput > div > div > input {
-    color: #0d1117 !important;
-    background: #ffffff !important;
+    color: #e6edf3 !important;
+    background: #1c2128 !important;
     font-size: 13px !important;
-    font-weight: 600 !important;
+    font-weight: 400 !important;
 }
 div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #e6edf3 !important; }
 .stTabs [data-baseweb="tab-list"] { background-color: #161b22; border-radius: 8px; }
